@@ -1,5 +1,5 @@
 {
-	"name": "silverstripe-australia/silverstripe-frontend-objects",
+	"name": "silverstripe-australia/frontend-objects",
 	"description": "A module that combines several different mechanisms of editing and showing data on the frontend of a SilverStripe site",
 	"type": "silverstripe-module",
 	"require": {

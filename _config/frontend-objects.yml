@@ -1,0 +1,6 @@
+---
+Name: frontend_objects
+---
+Director:
+  rules:
+    'frontend-admin': FrontendModelController

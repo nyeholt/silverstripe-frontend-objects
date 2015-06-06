@@ -97,7 +97,12 @@ class ItemList extends DataObject {
 	}
 
 
+	protected $items;
+	
 	public function getItems() {
+		if ($this->items) {
+			return $this->items;
+		}
 		$types = $this->allowedItems();
 		if (isset($types[$this->ItemType])) {
 			$items = DataList::create($this->ItemType);
@@ -114,8 +119,6 @@ class ItemList extends DataObject {
 				$items = $items->filter($filterBy);
 			}
 
-			// add filterAny
-			$items = $items->limit($this->getLimit());
 			
 			$sorts = $this->SortBy->getValues();
 			if (count($sorts)) {
@@ -131,7 +134,15 @@ class ItemList extends DataObject {
 			if ($representative->hasMethod('updateItemListItems')) {
 				$representative->updateItemListItems($items);
 			}
-
+			
+			// add filterAny
+//			$items = $items->limit($this->getLimit());
+			// grab the current request by any means possible
+			$request = Controller::curr()->getRequest();
+			$items = PaginatedList::create($items, $request);
+			$items->setPageLength($this->getLimit());
+			$items->setPaginationGetVar('list' . $this->ID);
+			
 			$remapped = ArrayList::create();
 			foreach ($items as $item) {
 				if ($this->Title == 'Watched items') {
@@ -159,6 +170,19 @@ class ItemList extends DataObject {
 
 				$remapped->push(ArrayData::create(array('Item' => $item, 'ClassName' => $item->ClassName, 'ID' => $item->ID, 'Values' => $values)));
 			}
+			
+			$remapped = PaginatedList::create($remapped);
+			
+			$remapped->setPaginationGetVar('list' . $this->ID);
+			$remapped->setPageLength($items->getPageLength());
+			$remapped->setPageStart($items->getPageStart());
+			$remapped->setTotalItems($items->getTotalItems());
+			$remapped->setCurrentPage($items->CurrentPage());
+			$remapped->setLimitItems(false);
+
+			$this->items = $remapped;
+//			$remapped->setTotalItems($unlimited);
+//			$remapped->setLimitItems($limit)
 			return $remapped;
 		}
 	}

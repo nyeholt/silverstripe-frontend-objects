@@ -5,6 +5,32 @@
 		}
 	})
 	
+	var loadList = function (listObj, pagination) {
+		var url = 'frontend-admin/model/itemlist/showlist/' + listObj.ID;
+		var params = {};
+		if (pagination) {
+			url += pagination;
+		}
+		$.get(url).done(function (data) {
+			// replace the table
+			$('#' + listObj.Type + listObj.ID).replaceWith(data);
+		});
+	};
+	
+	$(document).on('itemtable.paginate', function (event, data) {
+		
+	});
+	
+	$(document).on('click', '.pagination-controls a', function (e) {
+		e.preventDefault();
+		var list = $(this).parents('div.item-list').data('object');
+		var pagination = $(this).attr('href');
+		pagination = pagination.substring(pagination.indexOf('?'));
+		loadList(list, pagination);
+		
+		return false;
+	})
+	
 	$(document).on('sidebar.itemSaved', function (event, data) {
 		if (data && data.ID) {
 			var context = [];
@@ -28,15 +54,7 @@
 				var list = context[i];
 				$('#' + list.Type + list.ID).addClass('loadingList');
 				// close over the listId variable
-				(function (listObj) {
-					var url = 'frontend-admin/model/itemlist/showlist/' + listObj.ID;
-					$.get(url).done(function (data) {
-						// replace the table
-						$('#' + listObj.Type + listObj.ID).replaceWith(data);
-						
-					});
-				})(list);
-				
+				loadList(list);
 			}
 		}
 	});

@@ -1,5 +1,5 @@
 
-<div class="item-list" id="$ClassName$ID" data-object='{"ID": $ID, "Type": "$ClassName"}'>
+<div class="item-list list-of-$ItemType" id="$ClassName$ID" data-object='{"ID": $ID, "Type": "$ClassName"}'>
 	<h3>
 		$Title
 	</h3>
@@ -47,7 +47,30 @@
 			<% end_loop %>
 		</tr>
 		<% end_loop %>
-
+		<tr>
+			<td  colspan="$tableHeaders.count" class="pagination-controls">
+				<% if $getItems.MoreThanOnePage %>
+					<% if $getItems.NotFirstPage %>
+						<a class="prev" href="$getItems.PrevLink">Prev</a>
+					<% end_if %>
+					<% loop $getItems.Pages %>
+						<% if $CurrentBool %>
+							$PageNum
+						<% else %>
+							<% if $Link %>
+								<a href="$Link">$PageNum</a>
+							<% else %>
+								...
+							<% end_if %>
+						<% end_if %>
+						<% end_loop %>
+					<% if $getItems.NotLastPage %>
+						<a class="next" href="$getItems.NextLink">Next</a>
+					<% end_if %>
+				<% end_if %>
+				
+			</td>
+		</tr>
 	</tbody>
 
 </table>

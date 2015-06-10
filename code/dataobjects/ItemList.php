@@ -135,6 +135,11 @@ class ItemList extends DataObject {
 				$representative->updateItemListItems($items);
 			}
 			
+			$formatting = array();
+			if (method_exists($representative, 'getItemTableFormatting')) {
+				$formatting = $representative->getItemTableFormatting();
+			}
+			
 			// add filterAny
 //			$items = $items->limit($this->getLimit());
 			// grab the current request by any means possible
@@ -145,15 +150,17 @@ class ItemList extends DataObject {
 			
 			$remapped = ArrayList::create();
 			foreach ($items as $item) {
-				if ($this->Title == 'Watched items') {
-					$oi = 1;
-				}
 				if (!$item->canView()) {
 					continue;
 				}
 				$values = ArrayList::create();
 				foreach ($dbFields as $field => $label) {
-					$val = $item->$field;
+					if (isset($formatting[$field])) {
+						$val = $this->formattingField($item, $formatting[$field]);
+					} else {
+						$val = $item->$field;
+					}
+
 					$values->push(ArrayData::create(array(
 						'LinkField'	=> $label == 'Title',
 						'Label' => $field, 
@@ -225,6 +232,28 @@ class ItemList extends DataObject {
 		if (method_exists($representative, 'ItemTableActions')) {
 			return $representative->ItemTableActions();
 		}
+	}
+	
+	protected function formattingField($item, $format) {
+		$regex = '/\$Item\.([a-zA-Z0-9]+)/';
+		
+		$keywords = array();
+		$replacements = array();
+		if (preg_match_all($regex, $format, $matches)) {
+			foreach ($matches[0] as $index => $keyword) {
+				$field = $matches[1][$index];
+				$replacement = '';
+				if (method_exists($item, $field)) {
+					$replacement = $item->$field();
+				} else {
+					$replacement = $item->$field;
+				}
+				$keywords[] = $keyword;
+				$replacements[] = $replacement;
+			}
+		}
+		$format = str_replace($keywords, $replacements, $format);
+		return $format;
 	}
 	
 	protected function getLimit() {

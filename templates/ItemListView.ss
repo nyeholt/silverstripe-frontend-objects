@@ -55,7 +55,7 @@
 					<% end_if %>
 					<% loop $getItems.Pages %>
 						<% if $CurrentBool %>
-							$PageNum
+						<span class="item-list-current-page">$PageNum</span>
 						<% else %>
 							<% if $Link %>
 								<a href="$Link">$PageNum</a>

@@ -162,7 +162,6 @@ class ItemList extends DataObject {
 					}
 
 					$values->push(ArrayData::create(array(
-						'LinkField'	=> $label == 'Title',
 						'Label' => $field, 
 						'Value' => $val
 					)));

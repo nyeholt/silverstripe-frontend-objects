@@ -22,13 +22,7 @@
 		<tr data-itemid="$ID" class="item-list-row item-$ClassName" data-object='{"ID": $ID, "Type": "$ClassName"}'>
 			<% loop $Values %>
 			<td class="$Label.ATT">
-				<% if $LinkField %>
-					<% if $Up.Item.TableEdit %>
-					<a href='frontend-admin/model/$Up.ClassName/edit/$Up.ID' class='sidebar-edit-trigger' data-sidebaritem="$Up.ClassName,$Up.ID">$Value</a>
-					<% else %>
-					<a href='$Up.Item.Link'>$Value</a>
-					<% end_if %>
-				<% else_if $ActionsField %>
+				<% if $ActionsField %>
 				<ul class="button-group round even-{$Value.count}">
 				<% loop $Value %>
 					<li>

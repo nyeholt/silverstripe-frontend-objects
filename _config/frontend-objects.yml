@@ -4,3 +4,6 @@ Name: frontend_objects
 Director:
   rules:
     'frontend-admin': FrontendModelController
+SubmittedForm:
+  extensions:
+    - SubmittedFormForListExtension

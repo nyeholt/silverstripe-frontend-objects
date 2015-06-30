@@ -22,6 +22,8 @@ class ItemList extends DataObject {
 	
 	private static $default_sort = 'Sort ASC';
 	
+	private static $list_types = array('Page' => 'Pages');
+	
 	public function onBeforeWrite() {
 		parent::onBeforeWrite();
 		if (!$this->Number) {
@@ -44,12 +46,13 @@ class ItemList extends DataObject {
 	public function updateFields($fields) {
 		$types = $this->allowedItems();
 		
-		$fields->replaceField('ItemType', DropdownField::create('ItemType', 'Items of type', $types));
+		$fields->replaceField('ItemType', DropdownField::create('ItemType', 'Items of type', $types)->setEmptyString('--select type--'));
 		
 		
 		if ($this->ItemType) {
-			$dummy = singleton($this->ItemType);
-			
+			$list = $this->getFilteredItemList();
+			$dummy = $list->first();
+
 			$dbFields = $dummy->db();
 			$dbFields = array_combine(array_keys($dbFields), array_keys($dbFields));
 			$typeFields = array(
@@ -65,13 +68,15 @@ class ItemList extends DataObject {
 			foreach ($hasOnes as $relName => $relType) {
 				$dbFields[$relName.'ID'] = $relName .'ID';
 			}
-			
-			$dbFields = array_merge($typeFields, $dbFields, $hasOnes, $additional);
+
+			// $hasOnes, 
+			$dbFields = array_merge($typeFields, $dbFields); //, $additional);
 			
 			$fields->replaceField('Filter', KeyValueField::create('Filter', 'Filter by', $dbFields));
 			$fields->replaceField('Include', KeyValueField::create('Include', 'Include where', $dbFields));
 			
-			$fields->replaceField('DataFields', KeyValueField::create('DataFields', 'Fields in table', $dbFields));
+			$displayAble = array_merge($dbFields, $additional);
+			$fields->replaceField('DataFields', KeyValueField::create('DataFields', 'Fields in table', $displayAble));
 			
 			$fields->replaceField('SortBy', KeyValueField::create('SortBy', 'Sorting', $dbFields, array('ASC' => 'ASC', 'DESC' => 'DESC')));
 		}
@@ -87,12 +92,10 @@ class ItemList extends DataObject {
 		$types = self::config()->list_types;
 		if (!count($types)) {
 			$types = array(
-				'Company'	=> 'Companies',
-				'Project'	=> 'Projects',
-				'WorkItem'	=> 'Work items'
+				'Page'	=> 'Pages',
 			);
 		}
-		$types = array_combine(array_values($types), array_values($types));
+
 		return $types;
 	}
 
@@ -105,41 +108,21 @@ class ItemList extends DataObject {
 		}
 		$types = $this->allowedItems();
 		if (isset($types[$this->ItemType])) {
-			$items = DataList::create($this->ItemType);
-			
-			// add filter
-			
-			$filter = $this->Filter->getValues();
-			$filterBy = array();
-			if (count($filter)) {
-				foreach ($filter as $field => $val) {
-					$val = $this->resolveValue($val);
-					$filterBy[$field] = $val;
-				}
-				$items = $items->filter($filterBy);
-			}
+			$items = $this->getFilteredItemList();
 
-			
-			$sorts = $this->SortBy->getValues();
-			if (count($sorts)) {
-				$items = $items->sort($sorts);
-			}
-			
 			$dbFields = $this->DataFields->getValues();
 			if (!count($dbFields)) {
 				$dbFields = array('ID' => 'ID', 'Title' => 'Title');
 			}
 			
 			$representative = singleton($this->ItemType);
-			if ($representative->hasMethod('updateItemListItems')) {
-				$representative->updateItemListItems($items);
-			}
+			$representative->extend('updateItemListItems', $items);
 			
 			$formatting = array();
 			if (method_exists($representative, 'getItemTableFormatting')) {
 				$formatting = $representative->getItemTableFormatting();
-			}
-			
+			} 
+
 			// add filterAny
 //			$items = $items->limit($this->getLimit());
 			// grab the current request by any means possible
@@ -153,10 +136,12 @@ class ItemList extends DataObject {
 				if (!$item->canView()) {
 					continue;
 				}
+				// called here to allow extensions to update the data that the formatting logic can use
+				$item->extend('updateItemTableFormatting', $formatting);
 				$values = ArrayList::create();
 				foreach ($dbFields as $field => $label) {
 					if (isset($formatting[$field])) {
-						$val = $this->formattingField($item, $formatting[$field]);
+						$val = $this->formatField($item, $formatting[$field]);
 					} else {
 						$val = $item->$field;
 					}
@@ -174,9 +159,10 @@ class ItemList extends DataObject {
 					)));
 				}
 
-				$remapped->push(ArrayData::create(array('Item' => $item, 'ClassName' => $item->ClassName, 'ID' => $item->ID, 'Values' => $values)));
+				$displayItem = ArrayData::create(array('Item' => $item, 'ClassName' => $item->ClassName, 'ID' => $item->ID, 'Values' => $values));
+				$remapped->push($displayItem);
 			}
-			
+
 			$remapped = PaginatedList::create($remapped);
 			
 			$remapped->setPaginationGetVar('list' . $this->ID);
@@ -191,6 +177,28 @@ class ItemList extends DataObject {
 //			$remapped->setLimitItems($limit)
 			return $remapped;
 		}
+	}
+	
+	protected function getFilteredItemList() {
+		$items = DataList::create($this->ItemType);
+
+		// add filter
+		$filter = $this->Filter->getValues();
+		$filterBy = array();
+		if (count($filter)) {
+			foreach ($filter as $field => $val) {
+				$val = $this->resolveValue($val);
+				$filterBy[$field] = $val;
+			}
+			$items = $items->filter($filterBy);
+		}
+
+		$sorts = $this->SortBy->getValues();
+		if (count($sorts)) {
+			$items = $items->sort($sorts);
+		}
+
+		return $items;
 	}
 	
 	protected function resolveValue($val) {
@@ -233,7 +241,7 @@ class ItemList extends DataObject {
 		}
 	}
 	
-	protected function formattingField($item, $format) {
+	protected function formatField($item, $format) {
 		$regex = '/\$Item\.([a-zA-Z0-9]+)/';
 		
 		$keywords = array();
@@ -246,6 +254,9 @@ class ItemList extends DataObject {
 					$replacement = $item->$field();
 				} else {
 					$replacement = $item->$field;
+					if (is_callable($replacement)) {
+						$replacement = $replacement();
+					}
 				}
 				$keywords[] = $keyword;
 				$replacements[] = $replacement;
@@ -263,6 +274,11 @@ class ItemList extends DataObject {
 	}
 	
 	public function forTemplate() {
-		return $this->renderWith('ItemListView');
+		$templates = array();
+		if ($this->ItemType) {
+			$templates[] = 'ItemListView_' . $this->ItemType;
+		}
+		$templates[] = 'ItemListView';
+		return $this->renderWith($templates);
 	}
 }

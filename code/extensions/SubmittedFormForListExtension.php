@@ -25,7 +25,7 @@ class SubmittedFormForListExtension extends DataExtension {
 	 */
 	public function updateItemTableFormatting(&$formatting) {
 		foreach ($this->owner->Values() as $field) {
-			$fieldVal = $field->Value;
+			$fieldVal = $field->getFormattedValue();
 			$this->owner->{$field->Name} = $fieldVal;
 		}
 	}

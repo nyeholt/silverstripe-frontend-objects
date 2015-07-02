@@ -14,6 +14,9 @@ class SubmittedFormForListExtension extends DataExtension {
 	 */
 	public function updateSummaryFields(&$fields) {
 		foreach ($this->owner->Values() as $field) {
+			if (!strlen($field->Name)) {
+				continue;
+			}
 			$fields[$field->Name] = $field->Title;
 		}
 	}

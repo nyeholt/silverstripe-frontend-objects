@@ -263,10 +263,11 @@ class ItemList extends DataObject {
 		$keywords = array();
 		$replacements = array();
 		if (preg_match_all($regex, $format, $matches)) {
+			$allowed = $this->getAllowedMethods($item);
 			foreach ($matches[0] as $index => $keyword) {
 				$field = $matches[1][$index];
 				$replacement = '';
-				if ($item->hasMethod($field)) {
+				if ($item->hasMethod($field) && isset($allowed[$field])) {
 					$replacement = $item->$field();
 				} else {
 					$replacement = $item->$field;
@@ -280,6 +281,42 @@ class ItemList extends DataObject {
 		}
 		$format = str_replace($keywords, $replacements, $format);
 		return $format;
+	}
+	
+	protected $allowedMethods = array();
+	protected function getAllowedMethods($item) {
+		$cls = get_class($item);
+		$allowed = isset($this->allowedMethods[$cls]) ? $this->allowedMethods[$cls] : null;
+		if (!$allowed) {
+			$conf = Config::inst()->get(get_class($item), 'allowed_template_methods');
+			if ($conf) {
+				$allowed = $conf;
+			} else {
+				$methodsFromObject = function ($obj) {
+					$cls = get_class($obj);
+					$clazz = new ReflectionObject($obj);
+					$declaredMethods = $clazz->getMethods(ReflectionMethod::IS_PUBLIC);
+					$methods = array();
+					foreach ($declaredMethods as $method) {
+						/* @var $method  ReflectionMethod  */
+						if ($method->class == $cls) {
+							$methods[$method->getName()] = $method->getName();
+						}
+					}
+					return $methods;
+				};
+
+				$allowed = $methodsFromObject($item);
+
+				$extensions = $item->getExtensionInstances();
+				foreach ($extensions as $ext) {
+					$add = $methodsFromObject($ext);
+					$allowed = array_merge($allowed, $add);
+				}
+			}
+			$this->allowedMethods[$cls] = $allowed;
+		}
+		return $allowed;
 	}
 	
 	protected function getLimit() {

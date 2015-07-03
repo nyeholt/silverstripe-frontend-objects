@@ -51,7 +51,7 @@
 		}
 	};
 
-	$(document).on('click', 'div.main', function (e) {
+	$(document).on('click', '.main', function (e) {
 		if ($(elem).width() > 10) {
 			SideBar.hide();
 		}
@@ -99,5 +99,11 @@
 	$.extend(true, window.WiTrack, {
 		SideBar: SideBar
 	});
+	
+	$(function () {
+		if ($(elem).length == 0) {
+			$('<div>').attr('id', 'sidebar-container').appendTo('body');
+		}
+	})
 	
 })(jQuery);

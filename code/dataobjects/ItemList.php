@@ -287,6 +287,8 @@ class ItemList extends DataObject {
 		Requirements::javascript('frontend-objects/javascript/frontend-sidebar.js');
 		Requirements::javascript('frontend-objects/javascript/frontend-itemtable.js');
 
+		Requirements::css('frontend-objects/css/frontend-objects.css');
+		
 		$templates = array();
 		if ($this->ItemType) {
 			$templates[] = 'ItemListView_' . $this->ItemType;

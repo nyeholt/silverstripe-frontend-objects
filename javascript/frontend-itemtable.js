@@ -7,13 +7,18 @@
 	
 	var loadList = function (listObj, pagination) {
 		var url = 'frontend-admin/model/itemlist/showlist/' + listObj.ID;
+		var listContainer = '#' + listObj.Type + listObj.ID;
+		
+		if ($(listContainer).attr('data-listlink')) {
+			url = $(listContainer).attr('data-listlink');
+		}
 		var params = {};
 		if (pagination) {
 			url += pagination;
 		}
 		$.get(url).done(function (data) {
 			// replace the table
-			$('#' + listObj.Type + listObj.ID).replaceWith(data);
+			$(listContainer).replaceWith(data);
 		});
 	};
 	

@@ -1,13 +1,13 @@
 
-<div class="item-list list-of-$ItemType" id="$ClassName$ID" data-object='{"ID": $ID, "Type": "$ClassName"}'>
+<div class="item-list list-of-$ItemType" id="$ClassName$ID" data-object='{"ID": $ID, "Type": "$ClassName"}' data-listlink="$Link">
 	<h3>
 		$Title
 	</h3>
 	<% if canEdit %>
 	<a href='frontend-admin/model/$ClassName/edit/$ID' class='sidebar-edit-trigger' data-sidebaritem="$ClassName,$ID">
 	<i class="fi-widget">Edit</i>
-	<% end_if %>
 	</a>
+	<% end_if %>
 <table>
 	<thead>
 		<tr>

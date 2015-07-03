@@ -25,6 +25,12 @@ class ItemList extends DataObject {
 	
 	private static $list_types = array('Page' => 'Pages');
 	
+	/** 
+	 * The context that this list is displayed in, used for link building
+	 * @var Controller 
+	 */
+	protected $contextLink = null;
+	
 	public function onBeforeWrite() {
 		parent::onBeforeWrite();
 		if (!$this->Number) {
@@ -283,7 +289,18 @@ class ItemList extends DataObject {
 		return min(array($this->Number, 50));
 	}
 	
-	public function forTemplate() {
+	public function setContextLink($link) {
+		$this->contextLink = $link;
+	}
+	
+	public function Link() {
+		if ($this->contextLink) {
+			return $this->contextLink;
+		}
+		return 'frontend-admin/model/itemlist/showlist/' . $this->ID;
+	}
+	
+	public function forTemplate($template = null) {
 		Requirements::javascript('frontend-objects/javascript/frontend-sidebar.js');
 		Requirements::javascript('frontend-objects/javascript/frontend-itemtable.js');
 
@@ -294,7 +311,7 @@ class ItemList extends DataObject {
 			$templates[] = 'ItemListView_' . $this->ItemType;
 		}
 		$templates[] = 'ItemListView';
-		return $this->renderWith($templates);
+		return $this->renderWith($template ? $template : $templates);
 	}
 	
 	public function canView($member = null) {

@@ -7,3 +7,13 @@ Director:
 SubmittedForm:
   extensions:
     - SubmittedFormForListExtension
+
+---
+Name: template_extension
+Only:
+  moduleexists: usertemplates
+---
+ItemListPage:
+  has_one:
+    Template: UserTemplate
+

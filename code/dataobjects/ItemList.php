@@ -13,6 +13,7 @@ class ItemList extends DataObject {
 		'SortBy'			=> 'MultiValueField',
 		'Number'			=> 'Int',
 		'DataFields'		=> 'MultiValueField',
+		'FieldFormatting'	=> 'MultiValueField',
 		'Sort'				=> 'Int',
 	);
 	
@@ -50,9 +51,11 @@ class ItemList extends DataObject {
 		
 		
 		if ($this->ItemType) {
-			$list = $this->getFilteredItemList();
+			$list = $this->getFilteredItemList(false);
 			$dummy = $list->first();
-
+			if (!$dummy) {
+				$dummy = singleton($this->ItemType);
+			}
 			$dbFields = $dummy->db();
 			$dbFields = array_combine(array_keys($dbFields), array_keys($dbFields));
 			$typeFields = array(
@@ -77,6 +80,8 @@ class ItemList extends DataObject {
 			
 			$displayAble = array_merge($dbFields, $additional);
 			$fields->replaceField('DataFields', KeyValueField::create('DataFields', 'Fields in table', $displayAble));
+
+			$fields->replaceField('FieldFormatting', KeyValueField::create('FieldFormatting', 'Formatting for fields', $displayAble));
 			
 			$fields->replaceField('SortBy', KeyValueField::create('SortBy', 'Sorting', $dbFields, array('ASC' => 'ASC', 'DESC' => 'DESC')));
 		}
@@ -122,15 +127,12 @@ class ItemList extends DataObject {
 			if (method_exists($representative, 'getItemTableFormatting')) {
 				$formatting = $representative->getItemTableFormatting();
 			} 
-
-			// add filterAny
-//			$items = $items->limit($this->getLimit());
-			// grab the current request by any means possible
-			$request = Controller::curr()->getRequest();
-			$items = PaginatedList::create($items, $request);
-			$items->setPageLength($this->getLimit());
-			$items->setPaginationGetVar('list' . $this->ID);
 			
+			$userDefined = $this->FieldFormatting->getValues();
+			if (count($userDefined)) {
+				$formatting = array_merge($formatting, $userDefined);
+			}
+
 			$remapped = ArrayList::create();
 			foreach ($items as $item) {
 				if (!$item->canView()) {
@@ -179,7 +181,7 @@ class ItemList extends DataObject {
 		}
 	}
 	
-	protected function getFilteredItemList() {
+	public function getFilteredItemList($paginated = true) {
 		$items = DataList::create($this->ItemType);
 
 		// add filter
@@ -197,7 +199,15 @@ class ItemList extends DataObject {
 		if (count($sorts)) {
 			$items = $items->sort($sorts);
 		}
+		
+		if ($paginated) {
+			$request = Controller::curr()->getRequest();
+			$items = PaginatedList::create($items, $request);
+			$items->setPageLength($this->getLimit());
+			$items->setPaginationGetVar('list' . $this->ID);
 
+		}
+		
 		return $items;
 	}
 	
@@ -250,7 +260,7 @@ class ItemList extends DataObject {
 			foreach ($matches[0] as $index => $keyword) {
 				$field = $matches[1][$index];
 				$replacement = '';
-				if (method_exists($item, $field)) {
+				if ($item->hasMethod($field)) {
 					$replacement = $item->$field();
 				} else {
 					$replacement = $item->$field;
@@ -274,11 +284,26 @@ class ItemList extends DataObject {
 	}
 	
 	public function forTemplate() {
+		Requirements::javascript('frontend-objects/javascript/frontend-sidebar.js');
+		Requirements::javascript('frontend-objects/javascript/frontend-itemtable.js');
+
 		$templates = array();
 		if ($this->ItemType) {
 			$templates[] = 'ItemListView_' . $this->ItemType;
 		}
 		$templates[] = 'ItemListView';
 		return $this->renderWith($templates);
+	}
+	
+	public function canView($member = null) {
+		return true;
+	}
+	
+	public function canEdit($member = null) {
+		return Permission::check('CMS_ACCESS_FrontendAdmin');
+	}
+
+	public function canDelete($member = null) {
+		return Permission::check('CMS_ACCESS_FrontendAdmin');
 	}
 }

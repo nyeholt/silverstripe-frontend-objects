@@ -5,7 +5,7 @@
 	</h3>
 	<% if canEdit %>
 	<a href='frontend-admin/model/$ClassName/edit/$ID' class='sidebar-edit-trigger' data-sidebaritem="$ClassName,$ID">
-	<i class="fi-widget"> </i>
+	<i class="fi-widget">Edit</i>
 	<% end_if %>
 	</a>
 <table>

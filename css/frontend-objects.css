@@ -22,6 +22,11 @@
 	list-style: none;
 }
 
+#sidebar-container div.field.date input {
+	width: 50%;
+	display: inline-block;
+}
+
 #sidebar-container ul.multivaluefieldlist input, #sidebar-container ul.multivaluefieldlist select {
 	display: inline-block;
 	width: 48%;

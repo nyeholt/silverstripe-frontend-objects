@@ -6,19 +6,25 @@
 	})
 	
 	var loadList = function (listObj, pagination) {
-		var url = 'frontend-admin/model/itemlist/showlist/' + listObj.ID;
-		var listContainer = '#' + listObj.Type + listObj.ID;
-		
-		if ($(listContainer).attr('data-listlink')) {
-			url = $(listContainer).attr('data-listlink');
+		var listContainer = listObj;
+		var url = '';
+		if (!listObj.length) {
+			listContainer = $('#' + listObj.Type + listObj.ID);
+			url = 'frontend-admin/model/itemlist/showlist/' + listObj.ID;
 		}
+		if (listContainer.attr('data-listlink')) {
+			url = listContainer.attr('data-listlink');
+		}
+
 		var params = {};
 		if (pagination) {
 			url += pagination;
 		}
+		listContainer.addClass('loadingList');
 		$.get(url).done(function (data) {
 			// replace the table
-			$(listContainer).replaceWith(data);
+			listContainer.replaceWith(data);
+			listContainer.removeClass('loadingList');
 		});
 	};
 	
@@ -28,9 +34,9 @@
 	
 	$(document).on('click', '.pagination-controls a', function (e) {
 		e.preventDefault();
-		var list = $(this).parents('div.item-list').data('object');
 		var pagination = $(this).attr('href');
 		pagination = pagination.substring(pagination.indexOf('?'));
+		var list = $(this).parents('div.item-list');
 		loadList(list, pagination);
 		
 		return false;
@@ -57,7 +63,6 @@
 			}
 			for (var i in context) {
 				var list = context[i];
-				$('#' + list.Type + list.ID).addClass('loadingList');
 				// close over the listId variable
 				loadList(list);
 			}

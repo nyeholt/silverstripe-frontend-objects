@@ -362,4 +362,19 @@ class ItemList extends DataObject {
 	public function canDelete($member = null) {
 		return Permission::check('CMS_ACCESS_FrontendAdmin');
 	}
+	
+	public static function live_editable_field($field, $type, $attrs) {
+		$attrs['data-property'] = $field;
+		$attrs['class'] = 'live-editable';
+		$attrs['data-object'] = array('Type' => $type, 'ID' => '$Item.ID');
+		$attrstr = '';
+		foreach ($attrs as $key => $val) {
+			if (is_array($val)) {
+				$val = json_encode($val);
+			}
+			$attrstr .= "$key='$val' ";
+		}
+		$field = "<span $attrstr>\$Item.$field</span>";
+		return $field;
+	}
 }

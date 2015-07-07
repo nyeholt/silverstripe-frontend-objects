@@ -3,11 +3,6 @@
 	<h3>
 		$Title
 	</h3>
-	<% if canEdit %>
-	<a href='frontend-admin/model/$ClassName/edit/$ID' class='sidebar-edit-trigger' data-sidebaritem="$ClassName,$ID">
-	<i class="fi-widget">Edit</i>
-	</a>
-	<% end_if %>
 <table>
 	<thead>
 		<tr>

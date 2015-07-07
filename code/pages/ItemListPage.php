@@ -42,7 +42,7 @@ class ItemListPage extends Page {
 	}
 	
 	public function Content() {
-		$listContent = array();
+		$listContent = '';
 		if ($this->ItemListID) {
 			$list = $this->ItemList();
 			$template = null;

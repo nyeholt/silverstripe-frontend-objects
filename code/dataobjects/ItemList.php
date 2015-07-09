@@ -31,6 +31,14 @@ class ItemList extends DataObject {
 	 */
 	protected $contextLink = null;
 	
+	/**
+	 * A list of modifiers that can be bound to the item list to change the filtered 
+	 * items list. Mostly useful for code that's creating an item list directly. 
+	 *
+	 * @var array
+	 */
+	protected $listModifiers = array();
+	
 	public function onBeforeWrite() {
 		parent::onBeforeWrite();
 		if (!$this->Number) {
@@ -196,7 +204,9 @@ class ItemList extends DataObject {
 		if (count($filter)) {
 			foreach ($filter as $field => $val) {
 				$val = $this->resolveValue($val);
-				$filterBy[$field] = $val;
+				if ($val) {
+					$filterBy[$field] = $val;
+				}
 			}
 			$items = $items->filter($filterBy);
 		}
@@ -206,12 +216,15 @@ class ItemList extends DataObject {
 			$items = $items->sort($sorts);
 		}
 		
-		if ($paginated) {
+		foreach ($this->listModifiers as $modifier) {
+			$items = $modifier($items);
+		}
+		
+		if ($paginated && $this->getLimit()) {
 			$request = Controller::curr()->getRequest();
 			$items = PaginatedList::create($items, $request);
 			$items->setPageLength($this->getLimit());
 			$items->setPaginationGetVar('list' . $this->ID);
-
 		}
 		
 		return $items;
@@ -234,6 +247,17 @@ class ItemList extends DataObject {
 		}
 		
 		return $val;
+	}
+	
+	/**
+	 * Add a closure to be called against the item list prior to returning it
+	 * 
+	 * @param closure $modifier
+	 */
+	public function addFilterModifier($modifier) {
+		if (is_callable($modifier)) {
+			$this->listModifiers[] = $modifier;
+		}
 	}
 	
 	public function tableHeaders() {

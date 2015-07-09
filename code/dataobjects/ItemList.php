@@ -387,7 +387,11 @@ class ItemList extends DataObject {
 		return Permission::check('CMS_ACCESS_FrontendAdmin');
 	}
 	
-	public static function live_editable_field($field, $type, $attrs) {
+	public static function live_editable_field($field, $type, $editor, $attrs = array()) {
+		if (is_array($editor)) {
+			$attrs = $editor;
+			$editor = $editor['data-editortype'];
+		}
 		$attrs['data-property'] = $field;
 		$attrs['class'] = 'live-editable';
 		if (!isset($attrs['style'])) {
@@ -396,9 +400,20 @@ class ItemList extends DataObject {
 		$attrs['data-object'] = array('Type' => $type, 'ID' => '$Item.ID');
 		$attrstr = '';
 		foreach ($attrs as $key => $val) {
+			
+			if ($key == 'data-items' && $editor == 'dropdown') {
+				$newVal = array();
+				// remap to k, v object to ensure sorted array order
+				foreach ($val as $k => $v) {
+					$newVal[] = array('k' => $k, 'v' => $v);
+				}
+				$val = $newVal;
+			}
+			
 			if (is_array($val)) {
 				$val = json_encode($val);
 			}
+			$val = Convert::raw2att($val);
 			$attrstr .= "$key='$val' ";
 		}
 		$field = "<span $attrstr>\$Item.$field</span>";

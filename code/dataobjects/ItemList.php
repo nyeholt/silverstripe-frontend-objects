@@ -394,9 +394,7 @@ class ItemList extends DataObject {
 		}
 		$attrs['data-property'] = $field;
 		$attrs['class'] = 'live-editable';
-		if (!isset($attrs['style'])) {
-			$attrs['style'] = 'min-width: 5px; display: inline-block;';
-		}
+		
 		$attrs['data-object'] = array('Type' => $type, 'ID' => '$Item.ID');
 		$attrstr = '';
 		foreach ($attrs as $key => $val) {

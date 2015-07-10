@@ -1,10 +1,21 @@
 
 <div class="item-list list-of-$ItemType" id="$ClassName$ID" data-object='{"ID": $ID, "Type": "$ClassName"}' data-listlink="$Link">
-	<h3>
-		$Title
-	</h3>
+	
 <table>
 	<thead>
+		<% if $ShowTitle || $CreateLink %>
+		<tr>
+			<td colspan="$tableHeaders.count">
+				<% if ShowTitle %>
+				$Title
+				<% end_if %>
+				
+				<% if $CreateLink %>
+				<a class="sidebar-edit-trigger" href='$CreateLink' class='item-list-create'>add new</a>
+				<% end_if %>
+			</td>
+		</tr>
+		<% end_if %>
 		<tr>
 		<% loop $tableHeaders %>
 		<th>$Label</th>

@@ -14,11 +14,18 @@ class ItemList extends DataObject {
 		'Number'			=> 'Int',
 		'DataFields'		=> 'MultiValueField',
 		'FieldFormatting'	=> 'MultiValueField',
+		'ShowTitle'			=> 'Boolean',
+		'ShowCreate'		=> 'Boolean',
 		'Sort'				=> 'Int',
 	);
 	
 	private static $extensions = array(
 		'Restrictable',
+	);
+	
+	private static $defaults = array(
+		'ShowTitle'		=> 1,
+		'ShowCreate'	=> 0,
 	);
 	
 	private static $default_sort = 'Sort ASC';
@@ -30,6 +37,8 @@ class ItemList extends DataObject {
 	 * @var Controller 
 	 */
 	protected $contextLink = null;
+	
+	protected $createLink = null;
 	
 	/**
 	 * A list of modifiers that can be bound to the item list to change the filtered 
@@ -354,6 +363,14 @@ class ItemList extends DataObject {
 		$this->contextLink = $link;
 	}
 	
+	public function CreateLink() {
+		return $this->createLink;
+	}
+
+	public function setCreateLink($link) {
+		$this->createLink = $link;
+	}
+	
 	public function Link() {
 		if ($this->contextLink) {
 			return $this->contextLink;
@@ -371,6 +388,11 @@ class ItemList extends DataObject {
 		if ($this->ItemType) {
 			$templates[] = 'ItemListView_' . $this->ItemType;
 		}
+		
+		if ($this->ShowCreate && !$this->createLink) {
+			$this->createLink = 'frontend-admin/model/' . strtolower($this->ItemType) . '/edit';
+		}
+		
 		$templates[] = 'ItemListView';
 		return $this->renderWith($template ? $template : $templates);
 	}

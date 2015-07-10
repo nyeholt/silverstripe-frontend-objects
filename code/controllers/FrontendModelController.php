@@ -154,7 +154,7 @@ class FrontendModelController extends Page_Controller {
 			}
 			
 			$cls = $this->modelClass();
-			$this->record = new $cls;
+			$this->record = $cls::create();
 		}
 
 		if (!$this->record->canEdit()) {

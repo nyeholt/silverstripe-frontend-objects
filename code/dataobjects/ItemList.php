@@ -364,6 +364,12 @@ class ItemList extends DataObject {
 	}
 	
 	public function CreateLink() {
+		if ($this->createLink) {
+			return $this->createLink;
+		}
+		if ($this->ShowCreate) {
+			$this->createLink = 'frontend-admin/model/' . strtolower($this->ItemType) . '/edit';
+		}
 		return $this->createLink;
 	}
 

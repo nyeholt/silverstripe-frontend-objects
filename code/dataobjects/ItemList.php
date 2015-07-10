@@ -419,6 +419,8 @@ class ItemList extends DataObject {
 		if (is_array($editor)) {
 			$attrs = $editor;
 			$editor = $editor['data-editortype'];
+		} else {
+			$attrs['data-editortype'] = $editor;
 		}
 		$attrs['data-property'] = $field;
 		$attrs['class'] = 'live-editable';

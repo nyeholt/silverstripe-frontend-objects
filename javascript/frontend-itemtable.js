@@ -48,18 +48,15 @@
 			if (data.class == 'ItemList') {
 				context.push(data);
 			} else {
-				// we've got an item that's inside a list, so lets find 
+				// we've got an item that may be inside a list, so lets find 
 				// the data we're looking for as a tr
-				var selector = 'tr.item-list-row.item-' + data.Type + '[data-itemid=' + data.ID +']';
+				var selector = '.item-list.list-of-' + data.Type;
 				var items = $(selector);
 				if (items.length > 0) {
 					items.each (function () {
-						var parentElem = $(this).parents('div.item-list');
-						if (parentElem.length == 1) {
-							context.push(parentElem.data('object'));
-						}
+						context.push($(this));
 					});
-				}
+				} 
 			}
 			for (var i in context) {
 				var list = context[i];

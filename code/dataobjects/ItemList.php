@@ -212,10 +212,13 @@ class ItemList extends DataObject {
 		$filterBy = array();
 		if (count($filter)) {
 			foreach ($filter as $field => $val) {
+				$field = Convert::raw2sql($field);
 				$val = $this->resolveValue($val);
-				if ($val) {
+				if (is_null($val)) {
+					$items = $items->where('"' . $field . '" IS NULL');
+				} else {
 					$filterBy[$field] = $val;
-				}
+				} 
 			}
 			$items = $items->filter($filterBy);
 		}

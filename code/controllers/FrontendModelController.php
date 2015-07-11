@@ -225,7 +225,7 @@ class FrontendModelController extends Page_Controller {
 			$id = (int) $this->request->requestVar('ID');
 		}
 		if ($id) {
-			return singleton('DataService')->byId($this->modelClass(), $id);
+			return DataList::create($this->modelClass())->restrictedByID($id); 
 		}
 	}
 	

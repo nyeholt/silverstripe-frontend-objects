@@ -190,7 +190,7 @@ class ItemList extends DataObject {
 
 			$remapped = PaginatedList::create($remapped);
 			
-			$remapped->setPaginationGetVar('list' . $this->ID);
+			$remapped->setPaginationGetVar($this->paginationName());
 			$remapped->setPageLength($items->getPageLength());
 			$remapped->setPageStart($items->getPageStart());
 			$remapped->setTotalItems($items->getTotalItems());
@@ -236,7 +236,7 @@ class ItemList extends DataObject {
 			$request = Controller::curr()->getRequest();
 			$items = PaginatedList::create($items, $request);
 			$items->setPageLength($this->getLimit());
-			$items->setPaginationGetVar('list' . $this->ID);
+			$items->setPaginationGetVar($this->paginationName());
 		}
 		
 		return $items;
@@ -353,6 +353,14 @@ class ItemList extends DataObject {
 			$this->allowedMethods[$cls] = $allowed;
 		}
 		return $allowed;
+	}
+	
+	protected function paginationName() {
+		$name = $this->ID;
+		if (!$name) {
+			$name = URLSegmentFilter::create()->filter($this->Title);
+		}
+		return 'list' . $name;
 	}
 	
 	protected function getLimit() {

@@ -74,7 +74,7 @@
 		SideBar.load(url, sidebarItem);
 	})
 	
-	$(document).on('submit', elem + ' form', function (e) {
+	$(document).on('submit', elem + ' form:first', function (e) {
 		e.preventDefault();
 		var form = $(this);
 		form.find('input[type=submit]').prop('disabled', true);

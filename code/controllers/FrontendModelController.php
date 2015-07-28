@@ -205,7 +205,11 @@ class FrontendModelController extends Page_Controller {
 		}
 		
 		$specified = self::config()->model_class;
-		if ($specified) {
+		if (is_array($specified)) {
+			if (!$request || !in_array($request, $specified)) {
+				$request = $specified[0];
+			}
+		} else if ($specified) {
 			$request = $specified;
 		}
 		

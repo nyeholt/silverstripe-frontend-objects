@@ -161,12 +161,14 @@ class ItemList extends DataObject {
 				if (!$item->canView()) {
 					continue;
 				}
+				// copy of the array
+				$itemFormatting = $formatting;
 				// called here to allow extensions to update the data that the formatting logic can use
-				$item->extend('updateItemTableFormatting', $formatting);
+				$item->extend('updateItemTableFormatting', $itemFormatting);
 				$values = ArrayList::create();
 				foreach ($dbFields as $field => $label) {
-					if (isset($formatting[$field])) {
-						$val = $this->formatField($item, $formatting[$field]);
+					if (isset($itemFormatting[$field])) {
+						$val = $this->formatField($item, $itemFormatting[$field]);
 					} else {
 						$val = $item->$field;
 					}

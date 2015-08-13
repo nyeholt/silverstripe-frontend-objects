@@ -19,10 +19,6 @@ class ItemList extends DataObject {
 		'Sort'				=> 'Int',
 	);
 	
-	private static $extensions = array(
-		'Restrictable',
-	);
-	
 	private static $defaults = array(
 		'ShowTitle'		=> 1,
 		'ShowCreate'	=> 0,
@@ -417,15 +413,18 @@ class ItemList extends DataObject {
 	}
 	
 	public function canView($member = null) {
-		return true;
+		$can = parent::canView($member);
+		return $can ? $can : Permission::check('CMS_ACCESS_FrontendAdmin');
 	}
 	
 	public function canEdit($member = null) {
-		return Permission::check('CMS_ACCESS_FrontendAdmin');
+		$can = parent::canEdit($member);
+		return $can ? $can : Permission::check('CMS_ACCESS_FrontendAdmin');
 	}
 
 	public function canDelete($member = null) {
-		return Permission::check('CMS_ACCESS_FrontendAdmin');
+		$can = parent::canDelete($member);
+		return $can ? $can : Permission::check('CMS_ACCESS_FrontendAdmin');
 	}
 	
 	public static function live_editable_field($field, $type, $editor, $attrs = array()) {

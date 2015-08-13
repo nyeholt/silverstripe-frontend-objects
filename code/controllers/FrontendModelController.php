@@ -229,7 +229,8 @@ class FrontendModelController extends Page_Controller {
 			$id = (int) $this->request->requestVar('ID');
 		}
 		if ($id) {
-			return DataList::create($this->modelClass())->restrictedByID($id); 
+			$item = DataList::create($this->modelClass())->byID($id);
+			return $item && $item->canView() ? $item : null;
 		}
 	}
 	

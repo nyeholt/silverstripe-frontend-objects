@@ -64,13 +64,19 @@ class FrontendModelController extends Page_Controller {
 	 */
 	public function showlist() {
 		if ($this->getRecord() && $this->getRecord() instanceof ItemList) {
-			$content = $this->getRecord()->forTemplate();
-			if ($this->request->isAjax()) {
-				return $content;
+			
+			if ($this->request->getExtension() == 'csv') {
+				$this->response->addHeader('Content-type', 'text/csv');
+				return $this->getRecord()->toCSV();
 			} else {
-				return $this->customise(array(
-					'Content' => $content
-				))->renderWith(array('Page', 'Page'));
+				$content = $this->getRecord()->forTemplate();
+				if ($this->request->isAjax()) {
+					return $content;
+				} else {
+					return $this->customise(array(
+						'Content' => $content
+					))->renderWith(array('Page', 'Page'));
+				}
 			}
 		}
 	}

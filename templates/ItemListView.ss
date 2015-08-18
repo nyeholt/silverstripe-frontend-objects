@@ -11,7 +11,11 @@
 				<% end_if %>
 				
 				<% if $CreateLink %>
-				<a class="sidebar-edit-trigger" href='$CreateLink' class='item-list-create'>add new</a>
+				<a class="sidebar-edit-trigger" href='$CreateLink' class='item-list-create'>add</a>
+				<% end_if %>
+				
+				<% if $Exportable %>
+				<a class="item-table-export" href='$ExportLink' class='item-list-export'>export</a>
 				<% end_if %>
 			</td>
 		</tr>

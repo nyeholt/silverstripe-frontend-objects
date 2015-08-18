@@ -16,6 +16,7 @@ class ItemList extends DataObject {
 		'FieldFormatting'	=> 'MultiValueField',
 		'ShowTitle'			=> 'Boolean',
 		'ShowCreate'		=> 'Boolean',
+		'Exportable'		=> 'Boolean',
 		'Sort'				=> 'Int',
 	);
 	
@@ -393,6 +394,13 @@ class ItemList extends DataObject {
 		return 'frontend-admin/model/itemlist/showlist/' . $this->ID;
 	}
 	
+	public function ExportLink() {
+		if ($this->exportLink) {
+			return $this->exportLink;
+		}
+		return 'frontend-admin/model/itemlist/showlist/' . $this->ID . '.csv';
+	}
+	
 	public function forTemplate($template = null) {
 		Requirements::javascript('frontend-objects/javascript/frontend-sidebar.js');
 		Requirements::javascript('frontend-objects/javascript/frontend-itemtable.js');
@@ -410,6 +418,11 @@ class ItemList extends DataObject {
 		
 		$templates[] = 'ItemListView';
 		return $this->renderWith($template ? $template : $templates);
+	}
+	
+	public function toCSV() {
+		$content = $this->forTemplate('ItemListCsv');
+		return $content;
 	}
 	
 	public function canView($member = null) {

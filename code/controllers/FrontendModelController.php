@@ -154,10 +154,6 @@ class FrontendModelController extends Page_Controller {
 				Security::permissionFailure($this, "You must be logged in");
 				return;
 			}
-			$existing = singleton('DataService')->getOne($this->modelClass(),array('Title' => $this->request->requestVar('Title')));
-			if ($existing) {
-				throw new Exception("Record already exists");
-			}
 			
 			$cls = $this->modelClass();
 			$this->record = $cls::create();

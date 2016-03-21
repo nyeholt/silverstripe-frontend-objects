@@ -293,14 +293,20 @@ class ItemList extends DataObject {
 	}
 	
 	protected function formatField($item, $format) {
-		$regex = '/\$Item\.([a-zA-Z0-9]+)/';
+		$regex = '/\$Item\.([a-zA-Z0-9.]+)/';
 		
 		$keywords = array();
 		$replacements = array();
+        
 		if (preg_match_all($regex, $format, $matches)) {
 			$allowed = $this->getAllowedMethods($item);
 			foreach ($matches[0] as $index => $keyword) {
-				$field = $matches[1][$index];
+				$fieldModifier = explode('.', $matches[1][$index]);
+                $field = $fieldModifier[0];
+                $modifier = null;
+                if (isset($fieldModifier[1])) {
+                    $modifier = $fieldModifier[1];
+                }
 				$replacement = '';
 				if ($item->hasMethod($field) && isset($allowed[$field])) {
 					$replacement = $item->$field();
@@ -310,8 +316,13 @@ class ItemList extends DataObject {
 						$replacement = $replacement();
 					}
 				}
+                
 				$keywords[] = $keyword;
-				$replacements[] = $replacement;
+				$output = Text::create_field('Text', $replacement);
+                if ($modifier) {
+                    $output = $output->$modifier();
+                }
+                $replacements[] = $output;
 			}
 		}
 		$format = str_replace($keywords, $replacements, $format);
@@ -319,6 +330,15 @@ class ItemList extends DataObject {
 	}
 	
 	protected $allowedMethods = array();
+	/**
+	 * Gets the list of methods that can be called from a template. 
+	 * 
+	 * Checks if there's any explicitly defined methods, if not makes available
+	 * any publicly defined methods on the object directly.
+	 * 
+	 * @param DataObject $item
+	 * @return array
+	 */
 	protected function getAllowedMethods($item) {
 		$cls = get_class($item);
 		$allowed = isset($this->allowedMethods[$cls]) ? $this->allowedMethods[$cls] : null;

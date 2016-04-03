@@ -4,6 +4,12 @@
  * @author marcus
  */
 class ItemList extends DataObject {
+    
+    private static $allowed_funcs = array(
+        'strtotime' => true,
+        'date' => true,
+    );
+    
 	private static $db = array(
 		'Title'				=> 'Varchar',
 		'Global'			=> 'Boolean',
@@ -221,6 +227,18 @@ class ItemList extends DataObject {
 			}
 			$items = $items->filter($filterBy);
 		}
+        
+        $or = $this->Include->getValues();
+        if (count($or)) {
+            $orBy = array();
+            foreach ($or as $field => $val) {
+                $field = Convert::raw2sql($field);
+				$val = $this->resolveValue($val, $optFilter);
+                $fieldIndex = $optFilter ? $field . ':' . $optFilter : $field;
+				$orBy[$fieldIndex] = $val;
+            }
+            $items = $items->filterAny($orBy);
+        }
 
 		$sorts = $this->SortBy->getValues();
 		if (count($sorts)) {
@@ -241,10 +259,32 @@ class ItemList extends DataObject {
 		return $items;
 	}
 	
-	protected function resolveValue($val) {
-		if (strpos($val, 'IN:') === 0) {
-			$val = explode(',', substr($val, 3));
-		}
+	protected function resolveValue($val, &$filter = null) {
+        if (!$val) {
+            return $val;
+        }
+        // check for a filter
+        if (preg_match('{^([a-z]+):(.*)}i', $val, $matches)) {
+            if ($matches[1] == 'IN') {
+                $val = explode(',', $matches[2]);
+            } else {
+                $val = $matches[2];
+                $filter = $matches[1];
+            }
+        }
+        
+        // see if we're a function call
+        if (is_scalar($val) && preg_match('/([a-z0-9_]+)\((.*)\)/i', $val, $matches)) {
+            $func = $matches[1];
+            $allowed = $this->config()->allowed_funcs;
+            if (isset($allowed[$func]) && $allowed[$func]) {
+                $args = explode(',', $matches[2]);
+                $args = array_map(array($this, 'resolveValue'), $args);
+                $res = call_user_func_array($func, $args);
+                return $res;
+            }
+        }
+        
 		if (is_array($val)) {
 			$self = $this;
 			array_walk($val, function (&$arrayValue) use ($self) {

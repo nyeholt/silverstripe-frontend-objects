@@ -16,4 +16,11 @@ Only:
 ItemListPage:
   has_one:
     Template: UserTemplate
-
+---
+name: mediapage_extension
+Only:
+  moduleexists: mediawesome
+---
+MediaPage:
+  extensions:
+    - MediaPageFrontendCreateExtension

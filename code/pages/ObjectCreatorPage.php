@@ -455,7 +455,10 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		}
 
 		$content = $request->requestVar('edited') ? $this->EditingSuccessContent() : '';
-		$form = $this->CreateForm()->loadDataFrom($this->editObject);
+		$form = $this->CreateForm();
+		/*if ($form) {
+			$form->loadDataFrom($this->editObject);
+		}*/
 
 		return $this->customise(array(
 				'Title' => 'Editing ' . $this->editObject->Title,
@@ -496,7 +499,9 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		if ($this->CreateType) 
 		{
 			if (!$this->editObject) {
-				$this->editObject = singleton($this->CreateType);
+				$class = $this->CreateType;
+				$this->editObject = $class::create();
+				unset($class);
 			}
 			if ($this->editObject instanceof FrontendCreatable || $this->editObject->hasMethod('getFrontendCreateFields')) 
 			{

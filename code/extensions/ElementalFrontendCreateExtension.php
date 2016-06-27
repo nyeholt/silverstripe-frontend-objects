@@ -36,9 +36,9 @@ class ElementalFrontendCreateExtension extends DataExtension {
 		foreach ($cmsFields->dataFields() as $field) {
 			if (isset($whitelist[$field->getName()])) {
 				if ($field instanceof GridField) {
-					$field = $field->transform(new MultiRecordEditingTransformation);
+					$field = $field->transform(new MultiRecordTransformation);
 				}
-				if ($field instanceof MultiRecordEditingField) {
+				if ($field instanceof MultiRecordField) {
 					$field->setFieldsFunction(__FUNCTION__, true);
 				}
 				$fields->push($field);

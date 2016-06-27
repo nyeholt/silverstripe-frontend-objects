@@ -170,7 +170,7 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 		{
 			$fields->insertBefore($field->performReadonlyTransformation(), $firstFieldName);
 		}
-		$objFields->loadDataFrom($contextObj);
+		$form->loadDataFrom($contextObj);
 
 		// maybetodo(Jake): Add this only when necessary, that may never be so.
 		/*if ($contextObj->hasMethod('updateFrontendCreateReviewFields')) {

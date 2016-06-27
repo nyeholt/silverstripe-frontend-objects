@@ -474,7 +474,7 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 	 * @return HtmlEditorField_Toolbar
 	 */
 	public function EditorToolbar() {
-		// todo(jake): move into MultiRecordEditingField as extension?
+		// todo(jake): move into MultiRecordField as extension?
 		if (!HtmlEditorConfig::get_active()->getOption('language')) {
 			HtmlEditorConfig::get_active()->setOption('language', i18n::get_tinymce_lang());
 		}
@@ -571,7 +571,9 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			$s->updateFrontendCreateForm($form);
 		}
 		$this->extend('updateFrontendCreateForm', $form);
-		$form->loadDataFrom($this->editObject);
+		if ($this->editObject && $this->editObject->exists()) {
+			$form->loadDataFrom($this->editObject);
+		}
 
 		return $form;
 	}
@@ -690,62 +692,62 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 
 		$obj->ObjectCreatorPageID = $this->ID;
 
-		if ($form->validate()) {
-			// allow extensions to change the object state just before creating. 
-			$this->extend('updateObjectBeforeCreate', $obj);
-
-			if ($obj->hasMethod('onBeforeFrontendCreate')) {
-				$obj->onBeforeFrontendCreate($this);
-			}
-
-			$origMode = Versioned::get_reading_mode();
-			Versioned::reading_stage('Stage');
-
-			try {
-				$form->saveInto($obj);
-			} catch (ValidationException $ve) {
-				Versioned::set_reading_mode($origMode);
-				$form->sessionMessage("Could not upload file: " . $ve->getMessage(), 'bad');
-				$this->redirect($this->data()->Link());
-				return;
-			}
-
-			// get workflow
-			$workflowID = $this->data()->WorkflowDefinitionID;
-			$workflow = false;
-			if ($workflowID && $obj->hasExtension('WorkflowApplicable')) {
-				if ($workflow = WorkflowDefinition::get()->byID($workflowID)) {
-					$obj->WorkflowDefinitionID = $workflowID;
-				}
-			}
-
-			if (Object::has_extension($this->CreateType, 'Versioned')) {
-				// switching to make sure everything we do from now on is versioned, until the
-				// point that we redirect
-				$obj->write();
-				if ($this->PublishOnCreate) {
-					$obj->doPublish();
-				}
-			} else {
-				$obj->write();
-			}
-
-			// start workflow
-			if ($workflow) {
-				$svc = singleton('WorkflowService');
-				$svc->startWorkflow($obj);
-			}
-
-			$this->extend('objectCreated', $obj);
-			// let the object be updated directly
-			// if this is a versionable object, it'll be edited on stage
-			$obj->invokeWithExtensions('frontendCreated');
-
-			Versioned::set_reading_mode($origMode);
-		} else {
+		if (!$form->validate()) {
 			$form->sessionMessage("Could not validate form", 'bad');
+			return $this->redirect($this->data()->Link());
 		}
 
+		// allow extensions to change the object state just before creating. 
+		$this->extend('updateObjectBeforeCreate', $obj);
+
+		if ($obj->hasMethod('onBeforeFrontendCreate')) {
+			$obj->onBeforeFrontendCreate($this);
+		}
+
+		$origMode = Versioned::get_reading_mode();
+		Versioned::reading_stage('Stage');
+
+		try {
+			$form->saveInto($obj);
+		} catch (ValidationException $ve) {
+			Versioned::set_reading_mode($origMode);
+			$form->sessionMessage("Could not upload file: " . $ve->getMessage(), 'bad');
+			$this->redirect($this->data()->Link());
+			return;
+		}
+
+		// get workflow
+		$workflowID = $this->data()->WorkflowDefinitionID;
+		$workflow = false;
+		if ($workflowID && $obj->hasExtension('WorkflowApplicable')) {
+			if ($workflow = WorkflowDefinition::get()->byID($workflowID)) {
+				$obj->WorkflowDefinitionID = $workflowID;
+			}
+		}
+
+		if (Object::has_extension($this->CreateType, 'Versioned')) {
+			// switching to make sure everything we do from now on is versioned, until the
+			// point that we redirect
+			$obj->write();
+			if ($this->PublishOnCreate) {
+				$obj->doPublish();
+			}
+		} else {
+			$obj->write();
+		}
+
+		// start workflow
+		if ($workflow) {
+			$svc = singleton('WorkflowService');
+			$svc->startWorkflow($obj);
+		}
+
+		$this->extend('objectCreated', $obj);
+		// let the object be updated directly
+		// if this is a versionable object, it'll be edited on stage
+		$obj->invokeWithExtensions('frontendCreated');
+
+		Versioned::set_reading_mode($origMode);
 		$this->redirect($this->data()->Link() . '?new=' . $obj->ID);
 	}
 

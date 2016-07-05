@@ -168,7 +168,8 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 		}
 		foreach ($objFields as $field)
 		{
-			$fields->insertBefore($field->performReadonlyTransformation(), $firstFieldName);
+			// NOTE(Jake): Add '_Readonly' as the name allows for ListboxField to show its data properly in readonly mode.
+			$fields->insertBefore($field->setName($field->getName().'_Readonly')->performReadonlyTransformation(), $firstFieldName);
 		}
 		$form->loadDataFrom($contextObj);
 

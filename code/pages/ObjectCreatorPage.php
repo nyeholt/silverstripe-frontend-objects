@@ -333,6 +333,24 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 	 */
 	public $editObject = null;
 
+	public function init() {
+		parent::init();
+
+		// Initialize Edit Object
+		$request = $this->getRequest();
+		if (!$request->param('ID'))
+		{
+			$editObjectID = $request->postVar('ID');
+			if ($this->CreateType && $editObjectID)
+			{
+				$origStage = Versioned::current_stage();
+		        Versioned::reading_stage('Stage');
+				$this->editObject = DataObject::get_by_id($this->data()->CreateType, $editObjectID);
+				Versioned::reading_stage($origStage);
+			}
+		}
+	}
+
 	public function index($request) {
 		if ($request->requestVar('new')) {
 			return $this->customise(array(
@@ -486,15 +504,14 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 	}
 
 	public function CreateForm($request = null) {
-		if (!$this->editObject && $request && $this->CreateType && ($objID = $request->postVar('ID')))
-		{
-			$this->editObject = DataObject::get_by_id($this->CreateType, $objID);
-		}
+		// NOTE(Jake): This is required here so that any HasMany/ManyManyList in the fields uses
+		//			   the Staged data rather than _Live. ie. Elemental.
+		$originalReadingMode = Versioned::current_stage();
+		Versioned::reading_stage('Stage');
 
 		$fields = new FieldList(
 			new TextField('Title', _t('FrontendCreate.TITLE', 'Title'))
 		);
-
 	
 		if ($this->CreateType) 
 		{
@@ -575,6 +592,7 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			$form->loadDataFrom($this->editObject);
 		}
 
+		Versioned::reading_stage($originalReadingMode);
 		return $form;
 	}
 
@@ -760,13 +778,7 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 	 * @param SS_HttpRequest $request
 	 */
 	public function editobject($data, Form $form, $request) {
-		$id = (int) $request->postVar('ID');
-
 		Versioned::reading_stage('Stage');
-
-		if (!$this->editObject && $id) {
-			$this->editObject = DataObject::get_by_id($this->data()->CreateType, $id);
-		}
 
 		if ($form->validate()) {
 			// allow extensions to change the object state just before creating. 
@@ -794,9 +806,6 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			}
 
 			if (Object::has_extension($this->CreateType, 'Versioned')) {
-				// switching to make sure everything we do from now on is versioned, until the
-				// point that we redirect
-				Versioned::reading_stage('Stage');
 				$this->editObject->write('Stage');
 				if ($this->PublishOnCreate) {
 					$this->editObject->doPublish();

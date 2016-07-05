@@ -512,7 +512,7 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		$fields = new FieldList(
 			new TextField('Title', _t('FrontendCreate.TITLE', 'Title'))
 		);
-	
+
 		if ($this->CreateType) 
 		{
 			if (!$this->editObject) {
@@ -573,12 +573,18 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			}
 		}
 
-		$action = ($this->editObject && $this->editObject->exists()) ? FormAction::create('editobject', 'Save Changes') : FormAction::create('createobject', $this->data()->CreateButtonText);
-
+		// Actions
+		$action = null;
+		if ($this->editObject && $this->editObject->exists()) {
+			$action = FormAction::create('editobject', 'Save Changes');
+		} else {
+			$createButtonText = ($this->data()->CreateButtonText) ? $this->data()->CreateButtonText : 'Create';
+			$action = FormAction::create('createobject', $createButtonText);
+		}
 		$actions = FieldList::create($action);
 
 		// validators
-		$validator = $this->editObject->hasMethod('getFrontendCreateValidator') ? $this->editObject->getFrontendCreateValidator() : null;
+		$validator = ($this->editObject && $this->editObject->hasMethod('getFrontendCreateValidator')) ? $this->editObject->getFrontendCreateValidator() : null;
 
 		$form = new Form($this, 'CreateForm', $fields, $actions, $validator);
 

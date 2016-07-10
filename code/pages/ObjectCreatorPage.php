@@ -13,7 +13,7 @@ class ObjectCreatorPage extends Page {
 	private static $db = array(
 		'CreateType' => 'Varchar(32)',
 		'CreateLocationID' => 'Int',
-		'RestrictCreationTo' => 'Varchar',
+		'RestrictCreationTo' => 'Varchar(255)',
 		'AllowUserSelection' => 'Boolean',
 		'CreateButtonText' => 'Varchar',
 		'PublishOnCreate' => 'Boolean',
@@ -64,16 +64,7 @@ class ObjectCreatorPage extends Page {
 
 		if ($this->CreateType) {
 			if (Object::has_extension($this->CreateType, 'Hierarchy')) {
-				$parentMap = $this->config()->parent_map;
-				$parentType = isset($parentMap[$this->CreateType]) ? $parentMap[$this->CreateType] : $this->CreateType;
-				if ($parentType) {
-					// Fix bug where SiteTree won't load on subclasses of SiteTree properly. 
-					// Otherwise you think that the "CreateLocation" isn't set.
-					$subclass = ClassInfo::baseDataClass($parentType);
-					if ($subclass) {
-						$parentType = $subclass;
-					}
-				}
+				$parentType = $this->ParentMap();
 
 				if (!$this->AllowUserSelection) {
 					$fields->addFieldToTab('Root.Main', new TreeDropdownField('CreateLocationID', _t('FrontendCreate.CREATE_LOCATION', 'Create new items where?'), $parentType), 'Content');
@@ -120,9 +111,23 @@ class ObjectCreatorPage extends Page {
 		return false;
 	}
 
-	public function RestrictCreationToItems() {
+	public function ParentMap() {
 		$parentMap = $this->config()->parent_map;
-		$parentType = isset($parentMap[$this->CreateType]) ? $parentMap[$this->CreateType] : $this->CreateType;
+		if (isset($parentMap[$this->CreateType])) {
+			$parentType = $parentMap[$this->CreateType];
+		} else {
+			$parentType = $this->CreateType;
+			$baseClass = ClassInfo::baseDataClass($parentType);
+			if ($baseClass && $baseClass === 'SiteTree') {
+				$parentType = 'SiteTree';	
+			}
+		}
+		return $parentType;
+	}
+
+	public function RestrictCreationToItems() {
+		$parentType = $this->ParentMap();
+
 		$items = explode(',', $this->RestrictCreationTo);
 		$list = DataList::create($parentType)->filter('ID', $items);
 		return $list;

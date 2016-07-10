@@ -599,8 +599,11 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			$s->updateFrontendCreateForm($form);
 		}
 		$this->extend('updateFrontendCreateForm', $form);
-		if ($this->editObject && $this->editObject->exists()) {
-			$form->loadDataFrom($this->editObject);
+		if ($this->editObject) {
+			$this->editObject->invokeWithExtensions('updateFrontendCreateForm', $form);
+			if ($this->editObject->exists()) {
+				$form->loadDataFrom($this->editObject);
+			}
 		}
 
 		Versioned::reading_stage($originalReadingMode);

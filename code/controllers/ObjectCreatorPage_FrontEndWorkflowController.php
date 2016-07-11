@@ -44,11 +44,22 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 			}
 			$page = $this->getContextObject();
 			$title = $page->Title;
-	        return $this->parentController->customise(array(
-	        	'Title' => 'Reviewing "'.$title.'" submission',
-	        	'CreateForm' => $workflowForm,
-	        	'Form' => $workflowForm,
-	        ));
+			$createTitle = sprintf('Reviewing "%s" submission', $title);
+			if ($this->parentController->ReviewWithPageTemplate) {
+				$pageController = ModelAsController::controller_for($page);
+				return $pageController->customise(array(
+					'CreateTitle' => $createTitle,
+		        	'CreateForm' => $workflowForm,
+		        	'Form' => $workflowForm,
+		        ));
+			} else {
+		        return $this->parentController->customise(array(
+		        	'Title' => $createTitle,
+		        	'CreateTitle' => $createTitle,
+		        	'CreateForm' => $workflowForm,
+		        	'Form' => $workflowForm,
+		        ));
+			}
 	    }
 	    return $this->httpError(404);
 	}

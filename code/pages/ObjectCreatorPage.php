@@ -34,6 +34,8 @@ class ObjectCreatorPage extends Page {
 		'PublishOnCreate' => true
 	);
 
+	private static $icon = 'frontend-objects/images/objectcreatorpage.png';
+
 	/**
 	 * A mapping between object create type and the type of parent
 	 * that it should be created under (if applicable)

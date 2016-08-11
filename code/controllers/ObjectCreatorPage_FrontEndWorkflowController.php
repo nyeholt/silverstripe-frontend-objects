@@ -44,11 +44,22 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 			}
 			$page = $this->getContextObject();
 			$title = $page->Title;
-	        return $this->parentController->customise(array(
-	        	'Title' => 'Reviewing "'.$title.'" submission',
-	        	'CreateForm' => $workflowForm,
-	        	'Form' => $workflowForm,
-	        ));
+			$createTitle = sprintf('Reviewing "%s" submission', $title);
+			if ($this->parentController->ReviewWithPageTemplate) {
+				$pageController = ModelAsController::controller_for($page);
+				return $pageController->customise(array(
+					'CreateTitle' => $createTitle,
+		        	'CreateForm' => $workflowForm,
+		        	'Form' => $workflowForm,
+		        ));
+			} else {
+		        return $this->parentController->customise(array(
+		        	'Title' => $createTitle,
+		        	'CreateTitle' => $createTitle,
+		        	'CreateForm' => $workflowForm,
+		        	'Form' => $workflowForm,
+		        ));
+			}
 	    }
 	    return $this->httpError(404);
 	}
@@ -168,7 +179,14 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 		}
 		foreach ($objFields as $field)
 		{
-			$fields->insertBefore($field->performReadonlyTransformation(), $firstFieldName);
+			if ($field instanceof ListboxField) 
+			{
+				// NOTE(Jake): Add '_Readonly' as the name allows for ListboxField to show its data properly in readonly mode.
+				// NOTE(Jake): Used to add '_Readonly' to every field but that caused 'FrontendWorkflowForm' to not validate.
+				$field->setName($field->getName().'_Readonly');
+			}
+			$field = $field->performReadonlyTransformation();
+			$fields->insertBefore($field, $firstFieldName);
 		}
 		$form->loadDataFrom($contextObj);
 

@@ -184,6 +184,8 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 				// NOTE(Jake): Add '_Readonly' as the name allows for ListboxField to show its data properly in readonly mode.
 				// NOTE(Jake): Used to add '_Readonly' to every field but that caused 'FrontendWorkflowForm' to not validate.
 				$field->setName($field->getName().'_Readonly');
+				// NOTE(Jake): Fixes issue where LookupField validates false when blank. (not ideal for ListboxField)
+				$field->setHasEmptyDefault(true);
 			}
 			$field = $field->performReadonlyTransformation();
 			$fields->insertBefore($field, $firstFieldName);

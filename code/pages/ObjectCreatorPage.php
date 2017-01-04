@@ -530,21 +530,16 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 				$this->editObject = $class::create();
 				unset($class);
 			}
-			if ($this->editObject instanceof FrontendCreatable || $this->editObject->hasMethod('getFrontendCreateFields')) 
-			{
-				if ($tFields = $this->editObject->getFrontendCreateFields()) 
-				{
+			if ($this->editObject instanceof FrontendCreatable || $this->editObject->hasMethod('getFrontendCreateFields')) {
+				$tFields = $this->editObject->getFrontendCreateFields();
+				if ($tFields) {
 					// Only override fields if 'getFrontendCreateFields' actually returns something.
 					$fields = $tFields;
 				}
-			} 
-			else if ($obj instanceof Member) 
-			{
-				$fields = $obj->getMemberFormFields();
-			} 
-			else 
-			{
-				$fields = $obj->getFrontEndFields();
+			}  else if ($this->editObject instanceof Member) {
+				$fields = $this->editObject->getMemberFormFields();
+			} else  {
+				$fields = $this->editObject->getFrontEndFields();
 			}
 		} 
 		else 

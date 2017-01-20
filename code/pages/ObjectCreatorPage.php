@@ -282,11 +282,7 @@ class ObjectCreatorPage extends Page {
 	/**
 	 * Check whether the member can review submissions or not
 	 */
-	public function canReview($member = null) {
-		if (!$member) {
-			$member = Member::currentUser();
-		}
-
+	public function canReview($member, $record) {
 		$extended = $this->extendedCan(__FUNCTION__, $member);
 		if($extended !== null) return $extended;
 
@@ -373,7 +369,9 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 	}
 
 	public function review($request) {
-		if (!$this->canReview()) {
+		$member = Member::currentUser();
+		$record = $this->queryEditObject($request);
+		if (!$this->canReview($member, $record)) {
 			return $this->httpError(404);
 		}
 
@@ -412,17 +410,8 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			));
 		}
 
-		$id = (int) $request->param('ID');
-		if (!$id || !$this->data()->CreateType)
-		{
-			return $this->httpError(404);
-		}
-
-		$origStage = Versioned::current_stage();
-        Versioned::reading_stage('Stage');
         // NOTE: $this->editObject is used inside 'CreateForm'
-		$this->editObject = DataObject::get_by_id($this->data()->CreateType, $id);
-		Versioned::reading_stage($origStage);
+		$this->editObject = $this->queryEditObject($request);
 
 		if (!$this->editObject) {
 			return $this->httpError(404);
@@ -876,4 +865,18 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		}
 	}
 
+	/** 
+	 * @return DataObject
+	 */
+	protected function queryEditObject($request) {
+		$id = (int)$request->param('ID');
+		if (!$id || !$this->data()->CreateType) {
+			return null;
+		}
+		$origStage = Versioned::current_stage();
+        Versioned::reading_stage('Stage');
+		$result = DataObject::get_by_id($this->data()->CreateType, $id);
+		Versioned::reading_stage($origStage);
+		return $result;
+	}
 }

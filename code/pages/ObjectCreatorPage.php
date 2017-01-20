@@ -142,7 +142,7 @@ class ObjectCreatorPage extends Page {
 	 * Return link for the review listing page
 	 */
 	public function LinkReview() {
-		if (!$this->canReview())
+		if (!$this->canReview(Member::currentUser(), null))
 		{
 			return '';
 		}
@@ -166,7 +166,7 @@ class ObjectCreatorPage extends Page {
 			return;
 		}
 
-		if (!$this->canReview())
+		if (!$this->canReview($member, null))
 		{
 			return;
 		}

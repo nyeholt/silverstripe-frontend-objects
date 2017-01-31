@@ -173,14 +173,11 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 		$fields = $form->Fields();
 		$firstField = $fields->first();
 		$firstFieldName = ($firstField) ? $firstField->getName() : '';
-		if ($workflow && $workflow->CurrentAction) 
-		{
+		if ($workflow && $workflow->CurrentAction) {
 			$fields->insertBefore(ReadonlyField::create('WorkflowCurrentAction_Title', _t('AdvancedWorkflowAdmin.WorkflowStatus', 'Current action'), $workflow->CurrentAction), $firstFieldName);
 		}
-		foreach ($objFields as $field)
-		{
-			if ($field instanceof ListboxField) 
-			{
+		foreach ($objFields as $field) {
+			if ($field instanceof ListboxField) {
 				// NOTE(Jake): Add '_Readonly' as the name allows for ListboxField to show its data properly in readonly mode.
 				// NOTE(Jake): Used to add '_Readonly' to every field but that caused 'FrontendWorkflowForm' to not validate.
 				$field->setName($field->getName().'_Readonly');
@@ -191,15 +188,10 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 			$fields->insertBefore($field, $firstFieldName);
 		}
 		$form->loadDataFrom($contextObj);
-
-		// maybetodo(Jake): Add this only when necessary, that may never be so.
-		/*if ($contextObj->hasMethod('updateFrontendCreateReviewFields')) {
-			$contextObj->updateFrontendCreateReviewFields($fields);
-		}*/
+		$this->extend('updateFrontEndWorkflowForm', $form);
 
 		$reviewID = (int)$this->request->param('ID');
-		if ($reviewID)
-		{
+		if ($reviewID) {
 			return $form->httpSubmission($this->request);
 		}
 		return $form;

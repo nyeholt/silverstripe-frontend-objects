@@ -434,9 +434,13 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 				$title = 'Item not editable';
 				$content = '<p>This item has been already approved.</p>';
 			}
-			else if ($workflow && $workflow->CurrentAction()->canEditTarget($this->editObject))
+			else if ($workflow)
 			{
-				$canEdit = true;
+				if ($workflow->CurrentAction()->canEditTarget($this->editObject) === null
+					&& $this->editObject->canEdit()
+				) {
+					$canEdit = true;
+				}
 			}
 
 			if (!$canEdit)

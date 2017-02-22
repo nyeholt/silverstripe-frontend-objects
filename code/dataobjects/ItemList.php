@@ -316,7 +316,10 @@ class ItemList extends DataObject {
 		if (count($dbFields)) {
 			$list = ArrayList::create();
 			foreach ($dbFields as $field => $label) {
-				$list->push(ArrayData::create(array('Label' => $label)));
+				$list->push(ArrayData::create(array(
+					'FieldName' => $field,
+					'Label' => $label
+				)));
 			}
 			if ($actions = $this->actionsForType($this->ItemType)) {
 				$list->push(ArrayData::create(array('Label' => 'Actions')));

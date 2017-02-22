@@ -434,9 +434,13 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 				$title = 'Item not editable';
 				$content = '<p>This item has been already approved.</p>';
 			}
-			else if ($workflow && $workflow->CurrentAction()->canEditTarget($this->editObject))
+			else if ($workflow)
 			{
-				$canEdit = true;
+				if ($workflow->CurrentAction()->canEditTarget($this->editObject) === null
+					&& $this->editObject->canEdit()
+				) {
+					$canEdit = true;
+				}
 			}
 
 			if (!$canEdit)
@@ -818,16 +822,13 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			}
 
 			// start workflow
-			if ($this->editObject->hasExtension('WorkflowApplicable') && ($workflow = $this->editObject->getWorkflowInstance())) 
+			if ($this->editObject->hasExtension('WorkflowApplicable'))
 			{
-				if ($workflow->CurrentAction()->canEditTarget($this->editObject))
-				{
-					$svc = singleton('WorkflowService');
-					$workflowForObj = $svc->getWorkflowFor($this->editObject);
-					if (!$workflowForObj) {
-						// Only start a workflow if not in the middle of one.
-						$svc->startWorkflow($this->editObject);
-					}
+				$svc = singleton('WorkflowService');
+				$workflowForObj = $svc->getWorkflowFor($this->editObject);
+				if (!$workflowForObj) {
+					// Only start a workflow if not in the middle of one.
+					$svc->startWorkflow($this->editObject);
 				}
 			}
 

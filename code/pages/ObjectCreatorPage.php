@@ -480,7 +480,6 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		/*if ($form) {
 			$form->loadDataFrom($this->editObject);
 		}*/
-
 		return $this->customise(array(
 				'Title' => 'Editing ' . $this->editObject->Title,
 				'Content' => $content,
@@ -509,7 +508,9 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 	public function CreateForm($request = null) {
 		// NOTE(Jake): This is required here so that any HasMany/ManyManyList in the fields uses
 		//			   the Staged data rather than _Live. ie. Elemental.
-		$originalReadingMode = Versioned::current_stage();
+		//
+		//			   We *do not* want to revert back to _Live mode before the end of the function
+		//			   or has_many/many_many will use the _Live table.
 		Versioned::reading_stage('Stage');
 
 		$fields = new FieldList(
@@ -598,8 +599,6 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 				$form->loadDataFrom($this->editObject);
 			}
 		}
-
-		Versioned::reading_stage($originalReadingMode);
 		return $form;
 	}
 

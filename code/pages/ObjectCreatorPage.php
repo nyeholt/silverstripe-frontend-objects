@@ -184,7 +184,7 @@ class ObjectCreatorPage extends Page {
 			{
 				continue;
 			}
-			$canEdit = $workflowInstance->canEditTarget($page); // NOTE: Must be editable 'By Assignee' in the workflow step.
+			$canEdit = $page->canEdit(); 
 			$canView = $workflowInstance->canView();
 
 			if ($canView || $canEdit)
@@ -281,6 +281,11 @@ class ObjectCreatorPage extends Page {
 
 	/**
 	 * Check whether the member can review submissions or not
+	 *
+	 * @param Member $member
+	 * @param Record $record Check if the user canReview() the record, if 'null' is supplied, check if user
+	 *						 can see the review listing page.
+	 * @return bool|null
 	 */
 	public function canReview($member, $record) {
 		$extended = $this->extendedCan(__FUNCTION__, $member);
@@ -292,7 +297,12 @@ class ObjectCreatorPage extends Page {
 		}
 
 		if (!$this->WorkflowDefinitionID) {
-			// Cannot review if there's no workflow applied to this page.
+			// Cannot review if there's no workflow applied to the object creator page.
+			return false;
+		}
+
+		if ($record && !$record->getWorkflowInstance()) {
+			// Cannot review if there's no workflow active on the record.
 			return false;
 		}
 
@@ -430,17 +440,10 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			{
 				// If WorkflowDefinition is set but no workflow is active on the page, it must have been already approved
 				// so make it use the same permissions that would be used in the CMS.
-				$canEdit = $this->editObject->canEdit();
 				$title = 'Item not editable';
 				$content = '<p>This item has been already approved.</p>';
-			}
-			else if ($workflow)
-			{
-				if ($workflow->CurrentAction()->canEditTarget($this->editObject) === null
-					&& $this->editObject->canEdit()
-				) {
-					$canEdit = true;
-				}
+			} else if ($workflow) {
+				$canEdit = $this->editObject->canEdit();
 			}
 
 			if (!$canEdit)

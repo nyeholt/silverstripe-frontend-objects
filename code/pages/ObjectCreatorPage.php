@@ -296,6 +296,8 @@ class ObjectCreatorPage extends Page {
 			return false;
 		}
 
+		// NOTE(Jake): Might *want* to update the below logic so that when "$record === null"
+		//			   the user must belong in the Restricted User/Group.
 		if (!$this->WorkflowDefinitionID) {
 			// Cannot review if there's no workflow applied to the object creator page.
 			return false;
@@ -306,8 +308,12 @@ class ObjectCreatorPage extends Page {
 			return false;
 		}
 
-		if (!$member)
-		{
+		if ($record && !$record->WorkflowDefinition()) {
+			// Cannot review if the record no longer has a workflow applied.
+			return false;
+		}
+
+		if (!$member) {
 			// Cannot review if not a logged in member.
 			return false;
 		}
@@ -316,18 +322,11 @@ class ObjectCreatorPage extends Page {
 			return true;
 		}
 
-		// If the current member is ever assigned somewhere throughout the given workflow, give them access to 
-		// view the review page.
-		$actions = AssignUsersToWorkflowAction::get()->filter(array('WorkflowDefID' => $this->WorkflowDefinitionID));
-		foreach ($actions as $action)
-		{
-			$members = $action->getAssignedMembers()->map('ID', 'Email');
-			if (isset($members[$member->ID]))
-			{
-				return true;
-			}
+		if ($record) {
+			$extended = $record->canEdit($member);
+			if($extended !== null) return $extended;
 		}
-		return false;
+		return true;
 	}
 }
 

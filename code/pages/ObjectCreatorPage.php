@@ -308,11 +308,6 @@ class ObjectCreatorPage extends Page {
 			return false;
 		}
 
-		if ($record && !$record->WorkflowDefinition()) {
-			// Cannot review if the record no longer has a workflow applied.
-			return false;
-		}
-
 		if (!$member) {
 			// Cannot review if not a logged in member.
 			return false;

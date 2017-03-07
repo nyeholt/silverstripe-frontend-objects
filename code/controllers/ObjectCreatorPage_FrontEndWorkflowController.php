@@ -76,14 +76,10 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 		{
 			// Get Context Object and detect whether we can review/edit with workflows or not
 			$contextObj = $this->getContextObjectWithIDAndClass($id, $this->parentController->CreateType);
-			if ($contextObj)
+			if ($contextObj && $contextObj->canEdit())
 			{
-				$workflow = $contextObj->getWorkflowInstance();
-				if ($workflow && $workflow->CurrentAction()->canEditTarget($contextObj))
-				{
-					$actions = $form->Actions();
-					$actions->unshift(FormAction::create('doReview', 'Go to Review'));
-				}
+				$actions = $form->Actions();
+				$actions->unshift(FormAction::create('doReview', 'Go to Review'));
 			}
 		}
 	}
@@ -105,8 +101,7 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 		{
 			return;
 		}
-		$workflow = $contextObj->getWorkflowInstance();
-		if (!$workflow->CurrentAction()->canEditTarget($contextObj))
+		if (!$contextObj->canEdit())
 		{
 			return;
 		}
@@ -138,7 +133,7 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 			user_error('No workflow instance on page.', E_USER_WARNING);
 			return '';
 		}
-		if (!$workflow->CurrentAction()->canEditTarget($contextObj))
+		if (!$contextObj->canEdit())
 		{
 			user_error('Current user does not have edit permissions to review this page.', E_USER_WARNING);
 			return '';

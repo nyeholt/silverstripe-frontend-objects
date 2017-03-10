@@ -423,25 +423,16 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 
 		if ($this->editObject->hasExtension('WorkflowApplicable') 
 			&& ($workflowDef = $this->editObject->WorkflowDefinition())
-			&& ($workflowDef->exists()))
-		{
-			$canEdit = false;
-			$title = 'Item not currently editable';
-			$content = '<p>This item is currently going through an approval process and is not currently editable</p>';
-
-			$workflow = $this->editObject->getWorkflowInstance();
-			if (!$workflow || !$workflow->exists())
-			{
-				// If WorkflowDefinition is set but no workflow is active on the page, it must have been already approved
-				// so make it use the same permissions that would be used in the CMS.
-				$title = 'Item not editable';
-				$content = '<p>This item has been already approved.</p>';
-			} else if ($workflow) {
-				$canEdit = $this->editObject->canEdit();
-			}
-
-			if (!$canEdit)
-			{
+			&& $workflowDef->exists()) {
+			$canEdit = $this->editObject->canEdit();
+			if (!$canEdit) {
+				$title = 'Item not currently editable';
+				$content = '<p>This item is currently going through an approval process and is not currently editable</p>';
+				$workflow = $this->editObject->getWorkflowInstance();
+				if (!$workflow || !$workflow->exists()) {
+					$title = 'Item not editable';
+					$content = '<p>This item has been already approved.</p>';
+				}
 				return $this->customise(array(
 						'Title' => $request->requestVar('edited') ? '' : $title,
 						'Content' => $request->requestVar('edited') ? $this->EditingSuccessContent() : $content,
@@ -449,13 +440,11 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 						'CreateForm' => ''
 				));
 			}
-		}
-		else
-		{
-			// If versioned, ensure that the member editing it, created it.
+		} else {
 			$canEdit = false;
 			if ($this->editObject->has_extension('Versioned')) 
 			{
+				// If versioned, ensure that the member editing it, created it.
 				$memberID = (int)Member::currentUserID();
 				$versionedObj = Versioned::get_version($this->data()->CreateType, $id, 1);
 				$canEdit = ($memberID && $versionedObj->AuthorID && $memberID === (int)$versionedObj->AuthorID);

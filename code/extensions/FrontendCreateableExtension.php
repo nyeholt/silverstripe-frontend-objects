@@ -14,8 +14,10 @@ class FrontendCreateableExtension extends DataExtension {
 
 	public function FrontendEditLink(){
 		if($this->owner->ObjectCreatorPageID){
-			return $this->owner->ObjectCreatorPage()->Link('edit/' . $this->owner->ID);	
+			$page = $this->owner->ObjectCreatorPage();
+			if ($page->canEdit()) {
+				return $page->Link('edit/' . $this->owner->ID);
+			}
 		}
 	}
 }
-	

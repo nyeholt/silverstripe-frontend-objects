@@ -1,0 +1,137 @@
+---
+Name: exportedworkflow
+---
+Injector:
+  ExportedWorkflow:
+    class: WorkflowTemplate
+    constructor:
+      - 'Media Create/Review/Approver'
+      - 'Test Media create, then review, then editor flow'
+      - 0.2
+      - 0
+      - 3
+    properties:
+      structure:
+        groups:
+          - title: 'Administrators'
+          - title: 'Media Reviewer'
+          - title: 'Media Approver'
+          - title: 'Media Creator'
+        'Assign to Initiator':
+          type: AssignUsersToWorkflowAction
+          transitions:
+            - preview: 'Preview'
+          properties:
+            AllowEditing: No
+            AllowCommenting: 0
+            AssignInitiator: 1
+        'Preview':
+          type: SimpleApprovalWorkflowAction
+          transitions:
+            - Submit for approval: 'Assign to Media Reviewer / Media Approver for Review'
+            - Reject: 'Reject changes'
+          properties:
+            AllowEditing: By Assignees
+            AllowCommenting: 0
+        'Assign to Media Reviewer / Media Approver for Review':
+          type: AssignUsersToWorkflowAction
+          groups:
+            - title: 'Media Reviewer'
+            - title: 'Media Approver'
+            - title: 'Administrators'
+          transitions:
+            - notify: 'Notify users'
+          properties:
+            AllowEditing: No
+            AllowCommenting: 1
+            AssignInitiator: 0
+        'Notify users':
+          type: NotifyUsersWorkflowAction
+          transitions:
+            - approval: 'Media Reviewer Approval Step'
+          properties:
+            AllowEditing: No
+            AllowCommenting: 1
+            EmailSubject: 
+            EmailFrom: 
+            EmailTemplate: 
+        'Media Reviewer Approval Step':
+          type: SimpleApprovalWorkflowAction
+          transitions:
+            - Approve and Send to Youth Approvers: 'Assign Media Approvers'
+              groups:
+                - title: 'Media Reviewer'
+            - Approve and Publish: 'Publish'
+              groups:
+                - title: 'Media Approver'
+            - Reject: 'Reject changes'
+          properties:
+            AllowEditing: By Assignees
+            AllowCommenting: 1
+        'Assign Media Approvers':
+          type: AssignUsersToWorkflowAction
+          groups:
+            - title: 'Media Approver'
+          transitions:
+            - approval: 'Notify Media Approvers'
+          properties:
+            AllowEditing: No
+            AllowCommenting: 1
+            AssignInitiator: 0
+        'Notify Media Approvers':
+          type: NotifyUsersWorkflowAction
+          transitions:
+            - approval: 'Media Approver Approval Step'
+          properties:
+            AllowEditing: No
+            AllowCommenting: 1
+            EmailSubject: 
+            EmailFrom: 
+            EmailTemplate: 
+        'Media Approver Approval Step':
+          type: SimpleApprovalWorkflowAction
+          transitions:
+            - Approve and Publish: 'Publish'
+            - Reject: 'Reject changes'
+          properties:
+            AllowEditing: By Assignees
+            AllowCommenting: 1
+        'Publish':
+          type: PublishItemWorkflowAction
+          transitions:
+            - assign: 'Assign Initiator Publish'
+          properties:
+            AllowEditing: No
+            AllowCommenting: 1
+            PublishDelay: 0
+        'Assign Initiator Publish':
+          type: AssignUsersToWorkflowAction
+          transitions:
+            - notify: 'Notify Initiator Publish'
+          properties:
+            AllowEditing: No
+            AllowCommenting: 1
+            AssignInitiator: 0
+        'Notify Initiator Publish':
+          type: NotifyUsersWorkflowAction
+        'Reject changes':
+          type: CancelWorkflowAction
+          transitions:
+            - assign: 'Assign Initiator Cancel'
+          properties:
+            AllowEditing: No
+            AllowCommenting: 1
+        'Assign Initiator Cancel':
+          type: AssignUsersToWorkflowAction
+          transitions:
+            - notify: 'Notify Initiator Cancel'
+          properties:
+            AllowEditing: No
+            AllowCommenting: 1
+            AssignInitiator: 0
+        'Notify Initiator Cancel':
+          type: NotifyUsersWorkflowAction
+  WorkflowService:
+    properties:
+      templates:
+        - %$ExportedWorkflow

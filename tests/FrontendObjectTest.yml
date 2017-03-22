@@ -1,0 +1,49 @@
+Group:
+  #testPageAuthorAndApprover
+  creator:
+    Title: Page Creator
+    Code: page-creator
+  creator-2:
+    Title: Page Creator 2
+    Code: page-creator
+  approver:
+    Title: Page Approver
+    Code: page-approver
+  #testMediaCreatorReviewerApprover
+  media-creator:
+    Title: Media Creator
+    Code: media-creator
+  media-reviewer:
+    Title: Media Reviewer
+    Code: media-reviewer
+  media-approver:
+    Title: Media Approver
+    Code: media-approver
+Member:
+  #testPageAuthorAndApprover
+  creator:
+    FirstName: Page 
+    Surname: Creator
+    Email: page-creator@localhost
+    Groups: =>Group.creator
+  approver:
+    FirstName: Page 
+    Surname: Approver
+    Email: page-approver@localhost
+    Groups: =>Group.approver
+  #testMediaCreatorReviewerApprover
+  media-creator:
+    FirstName: Media 
+    Surname: Creator
+    Email: media-creator@localhost
+    Groups: =>Group.media-creator
+  media-reviewer:
+    FirstName: Media 
+    Surname: Reviewer
+    Email: media-reviewer@localhost
+    Groups: =>Group.media-reviewer
+  media-approver:
+    FirstName: Media 
+    Surname: Approver
+    Email: media-approver@localhost
+    Groups: =>Group.media-approver

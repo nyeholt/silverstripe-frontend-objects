@@ -612,7 +612,7 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		if ($id) {
 			$item = DataObject::get_by_id($this->CreateType, $id);
 			if (!$item) {
-				$item = Versioned::get_by_stage($this->CreateType, "Stage", "{$this->CreateType}.ID = $id")->First();
+				$item = Versioned::get_by_stage($this->CreateType, 'Stage')->byID($id);
 			}
 			return $item;
 		}

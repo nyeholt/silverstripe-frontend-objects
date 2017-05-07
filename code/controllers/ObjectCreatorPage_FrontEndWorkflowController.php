@@ -258,6 +258,6 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 	}
 
 	public function Link($action = null){
-		return Controller::join_links(Director::baseURL(), $this->parentController->Link(), 'review', $action);
+		return Controller::join_links($this->parentController->Link(), 'review', $action);
 	}
 }

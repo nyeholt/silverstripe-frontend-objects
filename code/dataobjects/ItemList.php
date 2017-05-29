@@ -355,7 +355,8 @@ class ItemList extends DataObject {
 					$replacement = $item->$field();
 				} else {
 					$replacement = $item->$field;
-					if (is_callable($replacement)) {
+                    // captures array / closure, but skips plain global functions
+					if (!is_string($replacement) && is_callable($replacement)) {
 						$replacement = $replacement();
 					}
 				}

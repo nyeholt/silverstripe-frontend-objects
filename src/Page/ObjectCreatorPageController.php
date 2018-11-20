@@ -1,332 +1,30 @@
 <?php
 
-/**
- * A page type that lets users create other data objects from the frontend of 
- * their website. 
- *
- * @author marcus@silverstripe.com.au
- * @license BSD License http://silverstripe.org/bsd-license/
- */
-class ObjectCreatorPage extends Page {
+namespace Symbiote\FrontendObjects\Page;
 
-	private static $createable_types = array('Page', 'File');
-	private static $db = array(
-		'CreateType' => 'Varchar(32)',
-		'CreateLocationID' => 'Int',
-		'RestrictCreationTo' => 'Varchar(255)',
-		'AllowUserSelection' => 'Boolean',
-		'CreateButtonText' => 'Varchar',
-		'PublishOnCreate' => 'Boolean',
-		'ShowCmsLink' => 'Boolean',
-		'WhenObjectExists' => "Enum('Rename, Replace, Error', 'Rename')",
-		'AllowUserWhenObjectExists' => 'Boolean',
-		'SuccessMessage' => 'HTMLText',
-		'EditingSuccessMessage' => 'HTMLText',
-		'AllowEditing' => 'Boolean',
-		'AdditionalProperties'		=> 'MultiValueField',
-		'ReviewWithPageTemplate'	=> 'Boolean',
-	);
-	private static $has_one = array(
-		'WorkflowDefinition' => 'WorkflowDefinition'
-	);
-	private static $defaults = array(
-		'CreateButtonText' => 'Create',
-		'PublishOnCreate' => true
-	);
+use PageController;
 
-	private static $icon = 'frontend-objects/images/objectcreatorpage.png';
+use SilverStripe\ORM\DataObject;
+use Symbiote\AdvancedWorkflow\Extensions\WorkflowApplicable;
+use SilverStripe\Versioned\Versioned;
+use Symbiote\FrontendObjects\Page\ObjectCreatorPage;
+use Symbiote\FrontendObjects\Control\ObjectCreatorPage_FrontEndWorkflowController;
+use Symbiote\AdvancedWorkflow\Services\WorkflowService;
+use SilverStripe\Forms\FieldList;
+use SilverStripe\Forms\TextField;
+use SilverStripe\Forms\LiteralField;
+use SilverStripe\Forms\HiddenField;
+use SilverStripe\Core\Config\Config;
+use SilverStripe\Forms\DropdownField;
+use SilverStripe\Forms\FormAction;
+use SilverStripe\Forms\Form;
+use SilverStripe\Core\Extensible;
+use SilverStripe\Security\Member;
+use SilverStripe\Control\Controller;
 
-	/**
-	 * A mapping between object create type and the type of parent
-	 * that it should be created under (if applicable)
-	 *
-	 * @var array
-	 */
-	private static $parent_map = array(
-		'File' => 'Folder'
-	);
 
-	public function getCMSFields() {
-		$fields = parent::getCMSFields();
-
-		$types = ClassInfo::implementorsOf('FrontendCreateableObject');
-
-		if (!$types) {
-			$types = array();
-		}
-
-		$types = array_merge($types, $this->config()->createable_types);
-		$types = array_combine($types, $types);
-
-		$fields->addFieldToTab('Root.Main', new DropdownField('CreateType', _t('FrontendCreate.CREATE_TYPE', 'Create objects of which type?'), $types), 'Content');
-		$fields->addFieldToTab('Root.Main', new CheckboxField('PublishOnCreate', _t('FrontendCreate.PUBLISH_ON_CREATE', 'Publish after creating (if applicable)')), 'Content');
-		$fields->addFieldToTab('Root.Main', new CheckboxField('ShowCmsLink', _t('FrontendCreate.SHOW_CMS_LINK', 'Show CMS link for Page objects after creation')), 'Content');
-		$fields->addFieldToTab('Root.Main', new CheckboxField('AllowEditing', _t('FrontendCreate.ALLOW_EDITING', 'Allow frontend editing of this page after creation')), 'Content');
-		$fields->addFieldToTab('Root.AfterSubmission', new HTMLEditorField('SuccessMessage', 'Success Message displayed after new object creation'));
-		$fields->addFieldToTab('Root.AfterSubmission', new HTMLEditorField('EditingSuccessMessage', 'Success Message dislpayed after editing existing object'));
-
-		if ($this->CreateType) {
-			if (Object::has_extension($this->CreateType, 'Hierarchy')) {
-				$parentType = $this->ParentMap();
-
-				if (!$this->AllowUserSelection) {
-					$fields->addFieldToTab('Root.Main', new TreeDropdownField('CreateLocationID', _t('FrontendCreate.CREATE_LOCATION', 'Create new items where?'), $parentType), 'Content');
-					$fields->addFieldToTab('Root.Main', new CheckboxField('ClearCreateLocation', _t('FrontendCreate.CLEAR_CREATE_LOCATION', 'Reset location value')), 'Content');
-					$fields->addFieldToTab('Root.Main', new CheckboxField('AllowUserSelection', _t('FrontendCreate.ALLOW_USER_SELECT', 'Allow users to select where to create items')), 'Content');
-				} else {
-					$fields->addFieldToTab('Root.Main', new CheckboxField('AllowUserSelection', _t('FrontendCreate.ALLOW_USER_SELECT', 'Allow users to select where to create items')), 'Content');
-					$fields->addFieldToTab('Root.Main', $ts = TreeMultiselectField::create('RestrictCreationToItems', _t('FrontendCreate.RESTRICT_LOCATION', 'Restrict creation to beneath this location'), $parentType), 'Content');
-					$ts->setValue($this->RestrictCreationTo);
-				}
-			}
-			if (Object::has_extension($this->CreateType, 'WorkflowApplicable')) {
-				$workflows = WorkflowDefinition::get()->map()->toArray();
-				$fields->addFieldToTab('Root.Main', DropdownField::create('WorkflowDefinitionID', 'Workflow Definition', $workflows)->setHasEmptyDefault(true), 'Content');
-				$fields->addFieldToTab('Root.Main', CheckboxField::create('ReviewWithPageTemplate', 'Make Workflow review page render with page template?')
-						->setDescription('Renders the page with its controller and shows how it would appear when published. $Form or $CreateForm must exist in the template for the review fields and save buttons.'), 'Content');
-			}
-		} else {
-			$fields->addFieldToTab('Root.Main', new LiteralField('SaveNotice', _t('FrontendCreate.SAVE_NOTICE', '<p>Select a type to create and save the page for additional options</p>')), 'Content');
-		}
-
-		$fields->addFieldToTab('Root.Main', MultiValueTextField::create('AdditionalProperties', 'Extra properties to set on created items'), 'Content');
-		
-		$fields->addFieldToTab('Root.Main', new TextField('CreateButtonText', _t('FrontendCreate.UPLOAD_TEXT', 'Upload button text')), 'Content');
-
-		if ($this->useObjectExistsHandling()) {
-			$fields->addFieldToTab('Root.Main', new DropdownField('WhenObjectExists', 'When Object Exists', $this->dbObject('WhenObjectExists')->EnumValues()), 'Content');
-			$fields->addFieldToTab('Root.Main', new CheckboxField('AllowUserWhenObjectExists', _t('FrontendCreate.ALLOW_USER_WHEN_OBJECT_EXISTS', 'Allow users to select an action to take if the object already exists')), 'Content');
-		}
-
-		$this->extend('updateObjectCreatorPageCMSFields', $fields);
-
-		return $fields;
-	}
-
-	public function onBeforeWrite() {
-		parent::onBeforeWrite();
-
-		if (isset($_REQUEST['ClearCreateLocation'])) {
-			$this->CreateLocationID = 0;
-		}
-	}
-
-	public function onChangeRestrictCreationToItems($items) {
-		$this->RestrictCreationTo = implode(',', $items);
-		return false;
-	}
-
-	public function ParentMap() {
-		$parentMap = $this->config()->parent_map;
-		if (isset($parentMap[$this->CreateType])) {
-			$parentType = $parentMap[$this->CreateType];
-		} else {
-			$parentType = $this->CreateType;
-			$baseClass = ClassInfo::baseDataClass($parentType);
-			if ($baseClass && $baseClass === 'SiteTree') {
-				$parentType = 'SiteTree';	
-			}
-		}
-		return $parentType;
-	}
-
-	public function RestrictCreationToItems() {
-		$parentType = $this->ParentMap();
-
-		$items = explode(',', $this->RestrictCreationTo);
-		$list = DataList::create($parentType)->filter('ID', $items);
-		return $list;
-	}
-
-	/**
-	 * Return link for the review listing page
-	 */
-	public function LinkReview() {
-		if (!$this->canReview(Member::currentUser(), null))
-		{
-			return '';
-		}
-		return $this->Link('review');
-	}
-
-	/** 
-	 * Returns all viewable and editable items that are waiting 
-	 * to be approved.
-	 *
-	 * @return ArrayList
-	 */
-	protected $_cache_review_items = null;
-	public function ReviewItems() {
-		if ($this->_cache_review_items) {
-			return $this->_cache_review_items;
-		}
-		$workflowDef = $this->WorkflowDefinition();
-		$member = Member::currentUser();
-		if (!$member || !$workflowDef || !$workflowDef->exists()) {
-			return;
-		}
-
-		if (!$this->canReview($member, null))
-		{
-			return;
-		}
-
-		$workflowInstances = WorkflowInstance::get()->filter(array(
-			'DefinitionID' => $this->WorkflowDefinitionID,
-			'WorkflowStatus:not' => 'Complete',
-		))->sort('LastEdited', 'DESC');
-
-		$result = array();
-		foreach ($workflowInstances as $workflowInstance)
-		{
-			$page = $workflowInstance->Target();
-			if (!$page || !$page->exists())
-			{
-				continue;
-			}
-			$canEdit = $page->canEdit(); 
-			$canView = $workflowInstance->canView();
-
-			if ($canView || $canEdit)
-			{
-				$page->_canView = $canView;
-				$page->_canEdit = $canEdit;
-
-				// Added CurrentActionSort so that reviewable items are sorted from most approved to least approved.
-				$page->_CurrentActionSort = 0;
-				$workflowCurrentAction = $workflowInstance->CurrentAction();
-				if ($workflowCurrentAction 
-					&& ($workflowBaseAction = $workflowCurrentAction->BaseAction())) 
-				{
-					$page->_CurrentActionSort = $workflowInstance->CurrentAction()->BaseAction()->Sort;
-				}
-
-				if ($canEdit) 
-				{
-					// In the case that the 'FrontendCreateableExtension' isn't applied, setup the 
-					// review/edit links automatically based on this context.
-					if (!$page->FrontendReviewLink) {
-						$page->FrontendReviewLink = $this->Link('review/'.$page->ID);
-					}
-					if ($this->data()->AllowEditing && !$page->FrontendEditLink) 
-					{
-						$page->FrontendEditLink = $this->Link('edit/'.$page->ID);
-					}
-				}
-				$page->WorkflowInstance = $workflowInstance; // Explicitly access workflow instance on templates
-				$page->failover = $workflowInstance; // Fallback to Workflow data in templates
-				$result[] = $page;
-			}
-		}
-		$result = new ArrayList($result);
-		return $this->_cache_review_items = $result;
-	}
-
-	/** 
-	 * Items the user may have previously reviewed but are no longer editable by them.
-	 *
-	 * @return ArrayList
-	 */
-	public function ReviewItemsViewable() {
-		$reviewItems = $this->ReviewItems();
-		if (!$reviewItems) {
-			return;
-		}
-		$result = array();
-		foreach ($reviewItems as $page)
-		{
-			if ($page && $page->_canView && !$page->_canEdit)
-			{
-				$result[] = $page;
-			}
-		}
-		return new ArrayList($result);
-	}
-
-	/** 
-	 * Items the user the user can review and approve
-	 *
-	 * @return ArrayList
-	 */
-	public function ReviewItemsEditable() {
-		$reviewItems = $this->ReviewItems();
-		if (!$reviewItems) {
-			return;
-		}
-		$result = array();
-		foreach ($reviewItems as $page)
-		{
-			if ($page && $page->_canEdit)
-			{
-				$result[] = $page;
-			}
-		}
-		$result = new ArrayList($result);
-		$result = $result->sort(array(
-			'_CurrentActionSort' => 'DESC',
-		));
-		return $result;
-	}
-
-	/**
-	 * checks to see if the object being created has the objectExists() method
-	 * which is needed to check for existing object
-	 * @return bool
-	 * */
-	public function useObjectExistsHandling() {
-		if ($this->CreateType) {
-			return singleton($this->CreateType)->hasMethod('objectExists');
-		}
-	}
-
-	/**
-	 * Check whether the member can review submissions or not
-	 *
-	 * @param Member $member
-	 * @param Record $record Check if the user canReview() the record, if 'null' is supplied, check if user
-	 *						 can see the review listing page.
-	 * @return bool|null
-	 */
-	public function canReview($member, $record) {
-		$extended = $this->extendedCan(__FUNCTION__, $member);
-		if($extended !== null) return $extended;
-
-		if (!class_exists('FrontEndWorkflowController')) {
-			// Cannot review if there's no workflow module installed
-			return false;
-		}
-
-		// NOTE(Jake): Might *want* to update the below logic so that when "$record === null"
-		//			   the user must belong in the Restricted User/Group.
-		if (!$this->WorkflowDefinitionID) {
-			// Cannot review if there's no workflow applied to the object creator page.
-			return false;
-		}
-
-		if ($record && !$record->getWorkflowInstance()) {
-			// Cannot review if there's no workflow active on the record.
-			return false;
-		}
-
-		if (!$member) {
-			// Cannot review if not a logged in member.
-			return false;
-		}
-
-		if (Permission::check('ADMIN', 'any', $member)) {
-			return true;
-		}
-
-		if ($record) {
-			$extended = $record->canEdit($member);
-			if($extended !== null) return $extended;
-		}
-		return true;
-	}
-}
-
-class ObjectCreatorPage_Controller extends Page_Controller {
-	public static $allowed_actions = array(
+class ObjectCreatorPageController extends PageController {
+	private static $allowed_actions = array(
 		'index',
 		'review',
 		'edit',
@@ -353,10 +51,10 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			$editObjectID = $request->postVar('ID');
 			if ($this->CreateType && $editObjectID)
 			{
-				$origStage = Versioned::current_stage();
-		        Versioned::reading_stage('Stage');
+				$origStage = Versioned::get_stage();
+		        Versioned::set_stage('Stage');
 				$this->editObject = DataObject::get_by_id($this->data()->CreateType, $editObjectID);
-				Versioned::reading_stage($origStage);
+				Versioned::set_stage($origStage);
 			}
 		}
 	}
@@ -421,7 +119,7 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			return $this->httpError(404);
 		}
 
-		if ($this->editObject->hasExtension('WorkflowApplicable') 
+		if ($this->editObject->hasExtension(WorkflowApplicable::class)
 			&& ($workflowDef = $this->editObject->WorkflowDefinition())
 			&& $workflowDef->exists()) {
 			$canEdit = $this->editObject->canEdit();
@@ -442,11 +140,11 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			}
 		} else {
 			$canEdit = false;
-			if ($this->editObject->has_extension('Versioned')) 
+			if ($this->editObject->has_extension(Versioned::class))
 			{
 				// If versioned, ensure that the member editing it, created it.
 				$memberID = (int)Member::currentUserID();
-				$versionedObj = Versioned::get_version($this->data()->CreateType, $id, 1);
+				$versionedObj = Versioned::get_version($this->data()->CreateType, $this->editObject->ID, 1);
 				$canEdit = ($memberID && $versionedObj->AuthorID && $memberID === (int)$versionedObj->AuthorID);
 				if (!$canEdit)
 				{
@@ -497,13 +195,13 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		//
 		//			   We *do not* want to revert back to _Live mode before the end of the function
 		//			   or has_many/many_many will use the _Live table.
-		Versioned::reading_stage('Stage');
+		Versioned::set_stage('Stage');
 
 		$fields = new FieldList(
 			new TextField('Title', _t('FrontendCreate.TITLE', 'Title'))
 		);
 
-		if ($this->CreateType) 
+		if ($this->CreateType)
 		{
 			if (!$this->editObject) {
 				$class = $this->CreateType;
@@ -521,11 +219,11 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			} else  {
 				$fields = $this->editObject->getFrontEndFields();
 			}
-		} 
-		else 
+		}
+		else
 		{
 			$fields = new FieldList(
-				new LiteralField('InvalidType', 'Invalid configuration is incorrectly configured')
+				new LiteralField('InvalidType', 'Type configuration is incorrectly configured')
 			);
 		}
 		if ($this->editObject && $this->editObject->ID) {
@@ -533,10 +231,10 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		}
 
 		// If record doesn't exist.
-		if (!$this->editObject || !$this->editObject->exists()) 
+		if (!$this->editObject || !$this->editObject->exists())
 		{
 			if ($this->data()->AllowUserSelection) {
-				$parentMap = Config::inst()->get('ObjectCreatorPage', 'parent_map');
+				$parentMap = Config::inst()->get(ObjectCreatorPage::class, 'parent_map');
 				$parentType = isset($parentMap[$this->CreateType]) ? $parentMap[$this->CreateType] : $this->CreateType;
 				$fields->push($tree = DropdownField::create('CreateLocationID', _t('FrontendCreate.SELECT_LOCATION', 'Location'), $parentType));
 				$tree->setSource($this->data()->RestrictCreationToItems()->map()->toArray());
@@ -573,9 +271,9 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 
 		$form = new Form($this, 'CreateForm', $fields, $actions, $validator);
 
-		if (class_exists('ObjectCreatorPage_FrontEndWorkflowController'))
+		if (class_exists(ObjectCreatorPage_FrontEndWorkflowController::class))
 		{
-			$s = singleton('ObjectCreatorPage_FrontEndWorkflowController');
+			$s = singleton(ObjectCreatorPage_FrontEndWorkflowController::class);
 			$s->updateFrontendCreateForm($form);
 		}
 		$this->extend('updateFrontendCreateForm', $form);
@@ -589,11 +287,11 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 	}
 
 	/**
-	 * Callback to handle filtering of the selection tree that users can create in. 
-	 * 
+	 * Callback to handle filtering of the selection tree that users can create in.
+	 *
 	 * Uses extensions to allow for overrides.
 	 *
-	 * @param DataObject $node 
+	 * @param DataObject $node
 	 */
 	public function createLocationFilter($node) {
 		$allow = $this->extend('filterCreateLocations', $node);
@@ -673,21 +371,21 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 
 		// create a new object or update / replace one...
 		$obj = null;
-		if ($this->data()->useObjectExistsHandling()) 
+		if ($this->data()->useObjectExistsHandling())
 		{
 			$existingObject = $this->objectExists();
-			if ($existingObject && $this->woe == 'Replace') 
+			if ($existingObject && $this->woe == 'Replace')
 			{
-				if ($existingObject->hasExtension('VersionedFileExtension') || $existingObject->hasExtension('Versioned')) {
+				if ($existingObject->hasExtension('VersionedFileExtension') || $existingObject->hasExtension(Versioned::class)) {
 					$obj = $existingObject;
 				} else {
 					$existingObject->delete();
 				}
-			} 
-			elseif ($existingObject && $this->woe == 'Error') 
+			}
+			elseif ($existingObject && $this->woe == 'Error')
 			{
 				$form->sessionMessage("Error: $this->CreateType already exists", 'bad');
-				return $this->redirect($this->Link()); // redirect back with error message	
+				return $this->redirect($this->Link()); // redirect back with error message
 			}
 		}
 		if (!$obj) {
@@ -702,12 +400,12 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 
 		$obj->ObjectCreatorPageID = $this->ID;
 
-		if (!$form->validate()) {
-			$form->sessionMessage("Could not validate form", 'bad');
-			return $this->redirect($this->data()->Link());
-		}
+		// if (!$form->validate()) {
+		// 	$form->sessionMessage("Could not validate form", 'bad');
+		// 	return $this->redirect($this->data()->Link());
+		// }
 
-		// allow extensions to change the object state just before creating. 
+		// allow extensions to change the object state just before creating.
 		$this->extend('updateObjectBeforeCreate', $obj);
 
 		if ($obj->hasMethod('onBeforeFrontendCreate')) {
@@ -715,7 +413,7 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		}
 
 		$origMode = Versioned::get_reading_mode();
-		Versioned::reading_stage('Stage');
+		Versioned::set_stage('Stage');
 
 		try {
 			$form->saveInto($obj);
@@ -729,13 +427,13 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		// get workflow
 		$workflowID = $this->data()->WorkflowDefinitionID;
 		$workflow = false;
-		if ($workflowID && $obj->hasExtension('WorkflowApplicable')) {
+		if ($workflowID && $obj->hasExtension(WorkflowApplicable::class)) {
 			if ($workflow = WorkflowDefinition::get()->byID($workflowID)) {
 				$obj->WorkflowDefinitionID = $workflowID;
 			}
 		}
 
-		if (Object::has_extension($this->CreateType, 'Versioned')) {
+		if (Extensible::has_extension($this->CreateType, Versioned::class)) {
 			// switching to make sure everything we do from now on is versioned, until the
 			// point that we redirect
 			$obj->write();
@@ -748,7 +446,7 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 
 		// start workflow
 		if ($workflow) {
-			$svc = singleton('WorkflowService');
+			$svc = singleton(WorkflowService::class);
 			$svc->startWorkflow($obj);
 		}
 
@@ -757,8 +455,10 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		// if this is a versionable object, it'll be edited on stage
 		$obj->invokeWithExtensions('frontendCreated');
 
-		Versioned::set_reading_mode($origMode);
-		$this->redirect($this->data()->Link() . '?new=' . $obj->ID);
+        Versioned::set_reading_mode($origMode);
+        $link = $this->data()->Link();
+        $link = $link . (strpos($link, "?") !== false ? "&" : "?") . "new=" . $obj->ID;
+		$this->redirect($link);
 	}
 
 	/**
@@ -770,10 +470,9 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 	 * @param SS_HttpRequest $request
 	 */
 	public function editobject($data, Form $form, $request) {
-		Versioned::reading_stage('Stage');
+		Versioned::set_stage('Stage');
 
-		if ($form->validate()) {
-			// allow extensions to change the object state just before creating. 
+			// allow extensions to change the object state just before creating.
 			$this->extend('updateObjectBeforeEdit', $this->editObject);
 
 			if ($this->editObject->hasMethod('onBeforeFrontendEdit')) {
@@ -791,13 +490,13 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			// get workflow
 			$workflowID = $this->data()->WorkflowDefinitionID;
 			$workflowDef = false;
-			if ($workflowID && $this->editObject->hasExtension('WorkflowApplicable')) {
+			if ($workflowID && $this->editObject->hasExtension(WorkflowApplicable::class)) {
 				if ($workflowDef = WorkflowDefinition::get()->byID($workflowID)) {
 					$this->editObject->WorkflowDefinitionID = $workflowID;
 				}
 			}
 
-			if (Object::has_extension($this->CreateType, 'Versioned')) {
+			if (Extensible::has_extension($this->CreateType, Versioned::class)) {
 				$this->editObject->write('Stage');
 				if ($this->PublishOnCreate) {
 					$this->editObject->doPublish();
@@ -807,9 +506,9 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			}
 
 			// start workflow
-			if ($this->editObject->hasExtension('WorkflowApplicable'))
+			if ($this->editObject->hasExtension(WorkflowApplicable::class))
 			{
-				$svc = singleton('WorkflowService');
+				$svc = singleton(WorkflowService::class);
 				$workflowForObj = $svc->getWorkflowFor($this->editObject);
 				if (!$workflowForObj) {
 					// Only start a workflow if not in the middle of one.
@@ -821,11 +520,11 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 			// let the object be updated directly
 			// if this is a versionable object, it'll be edited on stage
 			$this->editObject->invokeWithExtensions('frontendEdited');
-		} else {
-			$form->sessionMessage("Could not validate form", 'bad');
-		}
 
-		$this->redirect($this->data()->Link("edit/{$this->editObject->ID}") . '?edited=1');
+            $link = $this->data()->Link("edit/{$this->editObject->ID}");
+            $link = $link . (strpos($link, "?") !== false ? "&" : "?") . "edited=1";
+
+		$this->redirect($link);
 	}
 
 	/**
@@ -851,7 +550,7 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		}
 	}
 
-	/** 
+	/**
 	 * @return DataObject
 	 */
 	protected function queryEditObject($request) {
@@ -859,10 +558,10 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		if (!$id || !$this->data()->CreateType) {
 			return null;
 		}
-		$origStage = Versioned::current_stage();
-        Versioned::reading_stage('Stage');
+		$origStage = Versioned::get_stage();
+        Versioned::set_stage('Stage');
 		$result = DataObject::get_by_id($this->data()->CreateType, $id);
-		Versioned::reading_stage($origStage);
+		Versioned::set_stage($origStage);
 		return $result;
 	}
 }

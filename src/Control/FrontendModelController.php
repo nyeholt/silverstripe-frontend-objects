@@ -1,13 +1,36 @@
 <?php
 
+namespace Symbiote\FrontendObjects\Control;
+
+
+
+use Exception;
+use ReflectionClass;
+
+use SilverStripe\Security\Security;
+use SilverStripe\Security\Member;
+use SilverStripe\Forms\DatetimeField;
+use SilverStripe\Forms\FormAction;
+use SilverStripe\Forms\FieldList;
+use SilverStripe\Forms\RequiredFields;
+use SilverStripe\Forms\Form;
+use SilverStripe\Forms\HiddenField;
+use SilverStripe\ORM\DataList;
+use SilverStripe\Control\Director;
+use SilverStripe\Control\Controller;
+use SilverStripe\Security\SecurityToken;
+use PageController;
+
+
+
 /**
  * A Model controller for working with objects on the frontend
  *
  * @author Marcus Nyeholt <marcus@silverstripe.com.au>
  * @license BSD http://silverstripe.org/BSD-license
  */
-class FrontendModelController extends Page_Controller {
-	
+class FrontendModelController extends PageController {
+
 	private static $allowed_actions = array(
 		'view',
 		'index',
@@ -25,7 +48,7 @@ class FrontendModelController extends Page_Controller {
 	);
 
 	protected $record;
-	
+
 	protected $modelClass = null;
 
 	public function index() {
@@ -33,7 +56,7 @@ class FrontendModelController extends Page_Controller {
 			return $this->redirect('');
 		}
 	}
-	
+
 	public function handleAction($request, $action) {
 		$this->record = $this->getRecord();
 		$id = (int) $this->request->param('ID');
@@ -47,10 +70,10 @@ class FrontendModelController extends Page_Controller {
 		if ($this->record) {
 			return $this->customise($this->record)->renderWith(array($this->modelClass(), 'Page'));
 		}
-		
+
 		throw new Exception("Invalid record");
 	}
-	
+
 	public function all() {
 		if (!Member::currentUserID()) {
 			Security::permissionFailure($this, "You must be logged in");
@@ -58,13 +81,13 @@ class FrontendModelController extends Page_Controller {
 		}
 		return $this->renderWith(array($this->modelClass().'_list', 'Page'));
 	}
-	
+
 	/**
 	 * Shows a specific item list
 	 */
 	public function showlist() {
 		if ($this->getRecord() && $this->getRecord() instanceof ItemList) {
-			
+
 			if ($this->request->getExtension() == 'csv') {
 				$this->response->addHeader('Content-type', 'text/csv');
 				return $this->getRecord()->toCSV();
@@ -118,7 +141,7 @@ class FrontendModelController extends Page_Controller {
 		$fields = $object->getFrontEndFields();
 		/* @var $fields FieldList */
 		$df = $fields->dataFields();
-		
+
 		foreach ($df as $formField) {
 			// change the template for fieldholders
 			$formField->setFieldHolderTemplate('FrontendFormField_holder');
@@ -127,7 +150,7 @@ class FrontendModelController extends Page_Controller {
 				$formField->getTimeField()->setFieldHolderTemplate('FrontendFormField_holder');
 			}
 		}
-		
+
 		$actions = new FieldList(
 			$button = new FormAction('save', _t('Dashboards.SAVE', 'Save'))
 		);
@@ -136,7 +159,7 @@ class FrontendModelController extends Page_Controller {
 		$validator = new RequiredFields('Title');
 
 		$form = new Form($this, 'EditForm', $fields, $actions, $validator);
-		
+
 		if ($this->record) {
 			$form->Fields()->push(new HiddenField('ID', '', $this->record->ID));
 			$form->loadDataFrom($this->record);
@@ -146,7 +169,7 @@ class FrontendModelController extends Page_Controller {
 	}
 
 	public function save($data, Form $form, $request) {
-		
+
 		// if there's no existing id passed in the request, we must assume we're
 		// creating a new one, so chec kthat it doesn't exist already.
 		if (!$this->record) {
@@ -154,7 +177,7 @@ class FrontendModelController extends Page_Controller {
 				Security::permissionFailure($this, "You must be logged in");
 				return;
 			}
-			
+
 			$cls = $this->modelClass();
 			$this->record = $cls::create();
 		}
@@ -168,9 +191,9 @@ class FrontendModelController extends Page_Controller {
 		if ($this->request->isAjax()) {
 			$this->response->addHeader('Content-type', 'application/json');
 			return json_encode(array(
-				'message' => 'success', 
-				'class' => $this->record->ClassName, 
-				'id' => $this->record->ID, 
+				'message' => 'success',
+				'class' => $this->record->ClassName,
+				'id' => $this->record->ID,
 				'form' => $this->EditForm()->forTemplate()->raw()
 			));
 		} else {
@@ -181,18 +204,18 @@ class FrontendModelController extends Page_Controller {
 	public function Record() {
 		return $this->record;
 	}
-	
+
 	protected function modelClass() {
 		if ($this->modelClass) {
 			return $this->modelClass;
 		}
 		$request = $this->request->requestVar('model');
-		
+
 		if (!$request) {
 			// check URL params
 			$request = $this->request->param('ModelClass');
 		}
-		
+
 		if ($request) {
 			$allowed = self::config()->allowed_classes;
 			if (!in_array(strtolower($request), $allowed)) {
@@ -205,7 +228,7 @@ class FrontendModelController extends Page_Controller {
 				}
 			}
 		}
-		
+
 		$specified = self::config()->model_class;
 		if (is_array($specified)) {
 			if (!$request || !in_array($request, $specified)) {
@@ -214,7 +237,7 @@ class FrontendModelController extends Page_Controller {
 		} else if ($specified) {
 			$request = $specified;
 		}
-		
+
 		if (!$request) {
 			throw new Exception("Invalid modeltype specified");
 		}
@@ -226,7 +249,7 @@ class FrontendModelController extends Page_Controller {
 		if ($this->record) {
 			return $this->record;
 		}
-		$id = (int) $this->request->param('ID'); 
+		$id = (int) $this->request->param('ID');
 		if (!$id) {
 			$id = (int) $this->request->requestVar('ID');
 		}
@@ -235,15 +258,15 @@ class FrontendModelController extends Page_Controller {
 			return $item && $item->canView() ? $item : null;
 		}
 	}
-	
+
 	public function Link($action='') {
 		$record = null;
 		$args = func_get_args();
 		if (count($args) == 2) {
 			$record = $args[1];
 		}
-		
-		
+
+
 //		return Controller::join_links(Director::baseURL(), strtolower($this->modelClass()), $action);
 		if ($record) {
 			return Controller::join_links(Director::baseURL(), 'frontend-admin', 'model', strtolower($record->ClassName), $action, $record->ID);
@@ -251,8 +274,8 @@ class FrontendModelController extends Page_Controller {
 			return Controller::join_links(Director::baseURL(), 'frontend-admin', 'model', strtolower($this->modelClass()), $action);
 		}
 	}
-	
-	
+
+
 	protected function checkSecurityID($request) {
 		$secId = $request->postVar(SecurityToken::inst()->getName());
 		if ($secId != SecurityToken::inst()->getValue()) {

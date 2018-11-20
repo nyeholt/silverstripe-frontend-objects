@@ -1,5 +1,19 @@
 <?php
 
+namespace Symbiote\FrontendObjects\Extension;
+
+use HtmlEditorConfig;
+
+use MultiRecordTransformation;
+use MultiRecordField;
+use SilverStripe\Forms\RequiredFields;
+use SilverStripe\Forms\FieldList;
+use SilverStripe\ORM\ArrayLib;
+use SilverStripe\Forms\GridField\GridField;
+use SilverStripe\ORM\DataExtension;
+
+
+
 class ElementalFrontendCreateValidator extends RequiredFields {
 	public function php($data) {
 		$result = parent::php($data);

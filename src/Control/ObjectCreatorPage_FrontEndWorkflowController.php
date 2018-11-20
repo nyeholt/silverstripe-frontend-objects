@@ -1,6 +1,37 @@
 <?php
 
-if (!class_exists('FrontEndWorkflowController')) {
+namespace Symbiote\FrontendObjects\Control;
+
+
+
+
+
+
+
+
+
+
+
+
+
+use Exception;
+use Symbiote\AdvancedWorkflow\Controllers\FrontEndWorkflowController;
+use SilverStripe\Control\Controller;
+use SilverStripe\Security\Member;
+use SilverStripe\CMS\Controllers\ModelAsController;
+use SilverStripe\Forms\FormAction;
+use SilverStripe\Control\HTTPRequest;
+use Symbiote\AdvancedWorkflow\Extensions\WorkflowApplicable;
+use Symbiote\AdvancedWorkflow\DataObjects\WorkflowInstance;
+use SilverStripe\Forms\ReadonlyField;
+use SilverStripe\Forms\ListboxField;
+use SilverStripe\Forms\Form;
+use SilverStripe\Versioned\Versioned;
+use SilverStripe\ORM\DataObject;
+
+
+
+if (!class_exists(FrontEndWorkflowController::class)) {
 	return;
 }
 
@@ -66,13 +97,13 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 
 	public function updateFrontendCreateForm($form) {
 		//
-		// Add 'Go to Review' button 
+		// Add 'Go to Review' button
 		//
 		$fields = $form->Fields();
 		$idField = $fields->dataFieldByName('ID');
-		if ($idField 
-			&& $this->parentController->CreateType 
-			&& ($id = $idField->Value())) 
+		if ($idField
+			&& $this->parentController->CreateType
+			&& ($id = $idField->Value()))
 		{
 			// Get Context Object and detect whether we can review/edit with workflows or not
 			$contextObj = $this->getContextObjectWithIDAndClass($id, $this->parentController->CreateType);
@@ -110,19 +141,19 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 	}
 
 	public function Form($request = null) {
-		$isExecutingAsAction = ($request && $request instanceof SS_HTTPRequest && $request->param('Action') === __FUNCTION__);
-		
+		$isExecutingAsAction = ($request && $request instanceof HTTPRequest && $request->param('Action') === __FUNCTION__);
+
 		$contextObj = $this->getContextObject();
 		if (!$contextObj)
 		{
-			if ($isExecutingAsAction) 
+			if ($isExecutingAsAction)
 			{
 				user_error('Cannot determine "getContextObject".', E_USER_WARNING);
 			}
 			return '';
 		}
 
-		if (!$contextObj->hasExtension('WorkflowApplicable'))
+		if (!$contextObj->hasExtension(WorkflowApplicable::class))
 		{
 			user_error($contextObj->ClassName.' does not have "WorkflowApplicable" extension.', E_USER_WARNING);
 			return '';
@@ -143,7 +174,7 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 		//			   https://github.com/silverstripe-australia/advancedworkflow/pull/242
 		$this->beforeExtending('updateFrontEndWorkflowFields', array($this, 'updateFrontEndWorkflowActions'));
 		$this->beforeExtending('updateFrontEndWorkflowActions', array($this, 'updateFrontEndWorkflowActions'));
-		
+
 		// Force actions to be hidden with 'hide_disabled_actions_on_frontend'
 		$prevConfig = WorkflowInstance::config()->hide_disabled_actions_on_frontend;
 		WorkflowInstance::config()->hide_disabled_actions_on_frontend = true;
@@ -192,7 +223,7 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 		return $form;
 	}
 
-	public function doEdit(array $data, Form $form, SS_HTTPRequest $request) {
+	public function doEdit(array $data, Form $form, HTTPRequest $request) {
 		$id = (int)$request->param('ID');
 		if (!$id) {
 			user_error('Invalid ID passed for edit action');
@@ -201,7 +232,7 @@ class ObjectCreatorPage_FrontEndWorkflowController extends FrontEndWorkflowContr
 		return $this->redirect(Controller::join_links($this->parentController->Link('edit'), $id));
 	}
 
-	public function doFrontEndAction(array $data, Form $form, SS_HTTPRequest $request) {
+	public function doFrontEndAction(array $data, Form $form, HTTPRequest $request) {
 		parent::doFrontEndAction($data, $form, $request);
 		return $this->redirect($this->parentController->Link('review'));
 	}

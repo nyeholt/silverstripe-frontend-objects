@@ -1,15 +1,20 @@
 <?php
 
+namespace Symbiote\FrontendObjects\Extension;
+
+use SilverStripe\ORM\DataExtension;
+
+
 /**
- * Allow for the mapping of formsubmission fields to 
+ * Allow for the mapping of formsubmission fields to
  * properties to be displayed in tables
  *
  * @author marcus
  */
 class SubmittedFormForListExtension extends DataExtension {
-	
+
 	/**
-	 * 
+	 *
 	 * @param array $fields
 	 */
 	public function updateSummaryFields(&$fields) {
@@ -20,10 +25,10 @@ class SubmittedFormForListExtension extends DataExtension {
 			$fields[$field->Name] = $field->Title;
 		}
 	}
-	
+
 	/**
 	 * Add in the form values against the submitted form object
-	 * 
+	 *
 	 * @param array $formatting
 	 */
 	public function updateItemTableFormatting(&$formatting) {

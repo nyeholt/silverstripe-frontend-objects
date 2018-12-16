@@ -114,8 +114,8 @@ class ObjectCreatorPage extends Page {
 		$fields->addFieldToTab('Root.Main', new CheckboxField('PublishOnCreate', _t('FrontendCreate.PUBLISH_ON_CREATE', 'Publish after creating (if applicable)')), 'Content');
 		$fields->addFieldToTab('Root.Main', new CheckboxField('ShowCmsLink', _t('FrontendCreate.SHOW_CMS_LINK', 'Show CMS link for Page objects after creation')), 'Content');
 		$fields->addFieldToTab('Root.Main', new CheckboxField('AllowEditing', _t('FrontendCreate.ALLOW_EDITING', 'Allow frontend editing of this page after creation')), 'Content');
-		$fields->addFieldToTab('Root.AfterSubmission', new HTMLEditorField('SuccessMessage', 'Success Message displayed after new object creation'));
-		$fields->addFieldToTab('Root.AfterSubmission', new HTMLEditorField('EditingSuccessMessage', 'Success Message dislpayed after editing existing object'));
+		$fields->addFieldToTab('Root.AfterSubmission', HTMLEditorField::create('SuccessMessage', 'Success Message displayed after new object creation')->setRightTitle('Use $Link and $Title to reference the created page'));
+		$fields->addFieldToTab('Root.AfterSubmission', HTMLEditorField::create('EditingSuccessMessage', 'Success Message dislpayed after editing existing object')->setRightTitle('Use $Link and $Title to reference the created page'));
 
 		if ($this->CreateType) {
 			if (Extensible::has_extension($this->CreateType, Hierarchy::class)) {

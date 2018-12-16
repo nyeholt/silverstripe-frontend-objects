@@ -7,8 +7,7 @@ use SilverStripe\ORM\DataExtension;
 
 class FrontendCreateableExtension extends DataExtension
 {
-
-    public static $has_one = array(
+    private static $has_one = array(
         'ObjectCreatorPage' => ObjectCreatorPage::class
     );
 

@@ -21,6 +21,8 @@ use SilverStripe\Forms\Form;
 use SilverStripe\Core\Extensible;
 use SilverStripe\Security\Member;
 use SilverStripe\Control\Controller;
+use SilverStripe\ORM\FieldType\DBHTMLText;
+use SilverStripe\ORM\FieldType\DBField;
 
 
 class ObjectCreatorPageController extends PageController {
@@ -29,8 +31,6 @@ class ObjectCreatorPageController extends PageController {
 		'review',
 		'edit',
 		'CreateForm',
-		'createobject',
-		'editobject',
 		'doReview',
 		'EditorToolbar',
 	);
@@ -46,24 +46,21 @@ class ObjectCreatorPageController extends PageController {
 
 		// Initialize Edit Object
 		$request = $this->getRequest();
-		if (!$request->param('ID'))
-		{
-			$editObjectID = $request->postVar('ID');
-			if ($this->CreateType && $editObjectID)
-			{
-				$origStage = Versioned::get_stage();
-		        Versioned::set_stage('Stage');
-				$this->editObject = DataObject::get_by_id($this->data()->CreateType, $editObjectID);
-				Versioned::set_stage($origStage);
-			}
-		}
+        $editObjectID = $request->requestVar('ID');
+        if ($this->CreateType && $editObjectID)
+        {
+            $origStage = Versioned::get_stage();
+            Versioned::set_stage('Stage');
+            $this->editObject = DataObject::get_by_id($this->data()->CreateType, $editObjectID);
+            Versioned::set_stage($origStage);
+        }
 	}
 
 	public function index($request) {
 		if ($request->requestVar('new')) {
 			return $this->customise(array(
 				'Title' => 'Success',
-				'Content' => $this->SuccessContent(),
+				'Content' => DBField::create_field('HTMLText', $this->SuccessContent()),
 				'Form' => ''
 			));
 		}
@@ -73,7 +70,7 @@ class ObjectCreatorPageController extends PageController {
 	public function review($request) {
 		$member = Member::currentUser();
 		$record = $this->queryEditObject($request);
-		if (!$this->canReview($member, $record)) {
+		if (!$this->data()->canReview($member, $record)) {
 			return $this->httpError(404);
 		}
 
@@ -133,7 +130,7 @@ class ObjectCreatorPageController extends PageController {
 				}
 				return $this->customise(array(
 						'Title' => $request->requestVar('edited') ? '' : $title,
-						'Content' => $request->requestVar('edited') ? $this->EditingSuccessContent() : $content,
+						'Content' => DBField::create_field('HTMLText',$request->requestVar('edited') ? $this->EditingSuccessContent() : $content),
 						'Form' => '',
 						'CreateForm' => ''
 				));
@@ -166,7 +163,7 @@ class ObjectCreatorPageController extends PageController {
 		}*/
 		return $this->customise(array(
 				'Title' => 'Editing ' . $this->editObject->Title,
-				'Content' => $content,
+				'Content' => DBField::create_field('HTMLText',$content),
 				'Form' => $form,
 				'CreateForm' => $form
 		));
@@ -236,7 +233,7 @@ class ObjectCreatorPageController extends PageController {
 			if ($this->data()->AllowUserSelection) {
 				$parentMap = Config::inst()->get(ObjectCreatorPage::class, 'parent_map');
 				$parentType = isset($parentMap[$this->CreateType]) ? $parentMap[$this->CreateType] : $this->CreateType;
-				$fields->push($tree = DropdownField::create('CreateLocationID', _t('FrontendCreate.SELECT_LOCATION', 'Location'), $parentType));
+				$fields->push($tree = DropdownField::create('CreateLocationID', _t('FrontendCreate.SELECT_LOCATION', 'Location')));
 				$tree->setSource($this->data()->RestrictCreationToItems()->map()->toArray());
 			}
 
@@ -325,8 +322,8 @@ class ObjectCreatorPageController extends PageController {
 	public function SuccessContent() {
 		if ($object = $this->NewObject()) {
 			$message = $this->Data()->SuccessMessage;
-			$message = str_replace('$Title', $object->Title, $message);
-			$message = str_replace('$Link', $object->Link('?stage=Stage'), $message);
+            $message = str_replace('$Title', $object->Title, $message);
+			$message = str_replace('$Link', $object->Link(), $message);
 			return $message;
 		}
 	}

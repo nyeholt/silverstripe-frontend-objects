@@ -2,12 +2,12 @@
 
 namespace Symbiote\FrontendObjects\Extension;
 
-use Symbiote\Elemental\Form\MultiRecordEditingField;
 use SilverStripe\Forms\RequiredFields;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\ArrayLib;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\ORM\DataExtension;
+use Symbiote\MultiRecord\MultiRecordEditingField;
 
 
 

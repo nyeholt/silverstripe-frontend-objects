@@ -1,6 +1,10 @@
 <?php
+namespace Symbiote\FrontendObjects\Test;
 
-class FrontendObjectTestPage extends Page implements TestOnly
+use SilverStripe\Dev\TestOnly;
+
+
+class FrontendObjectTestPage extends \Page implements TestOnly
 {
     public function getFrontendCreateFields() {
         $cmsFields = $this->getCMSFields();

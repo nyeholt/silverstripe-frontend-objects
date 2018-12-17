@@ -3,11 +3,8 @@
 namespace Symbiote\FrontendObjects\Model;
 
 
-use Text;
-
 use ReflectionObject;
 use ReflectionMethod;
-
 
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\ORM\ArrayList;

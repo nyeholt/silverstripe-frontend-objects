@@ -60,6 +60,7 @@ use Symbiote\MultiValueField\Fields\KeyValueField;
  * @license BSD License http://silverstripe.org/bsd-license/
  */
 class ObjectCreatorPage extends Page {
+    private static $table_name = 'ObjectCreatorPage';
 
 	private static $createable_types = array('Page', File::class);
 	private static $db = array(

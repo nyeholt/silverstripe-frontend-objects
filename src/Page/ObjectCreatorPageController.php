@@ -175,7 +175,6 @@ class ObjectCreatorPageController extends PageController {
 	 * @return HtmlEditorField_Toolbar
 	 */
 	public function EditorToolbar() {
-		// todo(jake): move into MultiRecordField as extension?
 		if (!HtmlEditorConfig::get_active()->getOption('language')) {
 			HtmlEditorConfig::get_active()->setOption('language', i18n::get_tinymce_lang());
 		}

@@ -17,6 +17,8 @@ use SilverStripe\Forms\DropdownField;
  * @author marcus
  */
 class ItemListPage extends Page {
+    private static $table_name = 'ItemListPage';
+
 	private static $db = array(
 		'ShowAddButton'		=> 'Boolean',
 	);

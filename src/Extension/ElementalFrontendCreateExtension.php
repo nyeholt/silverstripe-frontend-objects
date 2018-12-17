@@ -2,10 +2,7 @@
 
 namespace Symbiote\FrontendObjects\Extension;
 
-use HtmlEditorConfig;
-
-use MultiRecordTransformation;
-use MultiRecordField;
+use Symbiote\Elemental\Form\MultiRecordEditingField;
 use SilverStripe\Forms\RequiredFields;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\ArrayLib;
@@ -52,7 +49,7 @@ class ElementalFrontendCreateExtension extends DataExtension {
 				if ($field instanceof GridField) {
 					$field = $field->transform(new MultiRecordTransformation);
 				}
-				if ($field instanceof MultiRecordField) {
+				if ($field instanceof MultiRecordEditingField) {
 					$field->setFieldsFunction(__FUNCTION__, true);
 				}
 				$fields->push($field);

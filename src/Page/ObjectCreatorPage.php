@@ -64,7 +64,7 @@ class ObjectCreatorPage extends Page {
 
 	private static $createable_types = array('Page', File::class);
 	private static $db = array(
-		'CreateType' => 'Varchar(32)',
+		'CreateType' => 'Varchar(255)',
 		'CreateLocationID' => 'Int',
 		'RestrictCreationTo' => 'Varchar(255)',
 		'AllowUserSelection' => 'Boolean',

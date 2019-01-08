@@ -427,7 +427,14 @@ class ObjectCreatorPageController extends PageController {
 			if ($workflow = WorkflowDefinition::get()->byID($workflowID)) {
 				$obj->WorkflowDefinitionID = $workflowID;
 			}
-		}
+        }
+
+        $additional = $this->data()->AdditionalProperties->getValues();
+        if ($additional) {
+            foreach ($additional as $field => $value) {
+                $obj->$field = $value;
+            }
+        }
 
 		if (Extensible::has_extension($this->CreateType, Versioned::class)) {
 			// switching to make sure everything we do from now on is versioned, until the

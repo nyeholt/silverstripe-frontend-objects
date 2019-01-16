@@ -49,6 +49,7 @@ use Symbiote\AdvancedWorkflow\Services\WorkflowService;
 use SilverStripe\Control\Controller;
 use PageController;
 use Symbiote\MultiValueField\Fields\KeyValueField;
+use Symbiote\MultiValueField\Fields\MultiValueDropdownField;
 
 
 
@@ -64,10 +65,11 @@ class ObjectCreatorPage extends Page {
 
 	private static $createable_types = array('Page', File::class);
 	private static $db = array(
-		'CreateType' => 'Varchar(255)',
+        'CreateType' => 'Varchar(255)',
+        'CreateTypeOptions' => 'MultiValueField',
 		'CreateLocationID' => 'Int',
 		'RestrictCreationTo' => 'Varchar(255)',
-		'AllowUserSelection' => 'Boolean',
+        'AllowUserSelection' => 'Boolean',
 		'CreateButtonText' => 'Varchar',
 		'PublishOnCreate' => 'Boolean',
 		'ShowCmsLink' => 'Boolean',
@@ -99,6 +101,63 @@ class ObjectCreatorPage extends Page {
 		'File' => Folder::class
 	);
 
+    public function allSubtypes($type) {
+        $classes = ClassInfo::getValidSubClasses($type);
+
+        $baseClassIndex = array_search(self::class, $classes);
+        if ($baseClassIndex !== false) {
+            unset($classes[$baseClassIndex]);
+        }
+
+        $currentClass = null;
+
+        $result = [];
+        foreach ($classes as $class) {
+            $instance = singleton($class);
+            if (!$instance->canCreate()) {
+                continue;
+            }
+            if ($perms = $instance->config()->get('need_permission')) {
+                if (!$this->can($perms)) {
+                    continue;
+                }
+            }
+
+            $pageTypeName = $instance->i18n_singular_name();
+
+            $currentClass = $class;
+            $result[$class] = $pageTypeName;
+
+            // If we're in translation mode, the link between the translated pagetype title and the actual classname
+            // might not be obvious, so we add it in parantheses. Example: class "RedirectorPage" has the title
+            // "Weiterleitung" in German, so it shows up as "Weiterleitung (RedirectorPage)"
+            if (i18n::getData()->langFromLocale(i18n::get_locale()) != 'en') {
+                $result[$class] = $result[$class] .  " ({$class})";
+            }
+        }
+
+        return $result;
+    }
+
+    public function allAvailableTypes() {
+        $types = ClassInfo::implementorsOf(FrontendCreateableObject::class);
+
+		if (!$types) {
+			$types = array();
+		}
+
+		$types = array_merge($types, $this->config()->createable_types);
+        $types = array_combine($types, $types);
+
+        $allTypes = [];
+        foreach ($types as $type => $typeLabel) {
+            $typeResult = $this->allSubtypes($type);
+            $allTypes = array_merge($allTypes, $typeResult);
+        }
+
+        return $allTypes;
+    }
+
 	public function getCMSFields() {
 		$fields = parent::getCMSFields();
 
@@ -109,9 +168,12 @@ class ObjectCreatorPage extends Page {
 		}
 
 		$types = array_merge($types, $this->config()->createable_types);
-		$types = array_combine($types, $types);
+        $types = array_combine($types, $types);
 
-		$fields->addFieldToTab('Root.Main', new DropdownField('CreateType', _t('FrontendCreate.CREATE_TYPE', 'Create objects of which type?'), $types), 'Content');
+        $allTypes = $this->allAvailableTypes();
+
+        $fields->addFieldToTab('Root.Main', new DropdownField('CreateType', _t('FrontendCreate.CREATE_TYPE', 'Create objects of which type?'), $types), 'Content');
+        $fields->addFieldToTab('Root.Main', MultiValueDropdownField::create('CreateTypeOptions', _t('FrontendCreate.CREATE_TYPE', 'Allow user to select type (type selected above becomes the default)'), $allTypes), 'Content');
 		$fields->addFieldToTab('Root.Main', new CheckboxField('PublishOnCreate', _t('FrontendCreate.PUBLISH_ON_CREATE', 'Publish after creating (if applicable)')), 'Content');
 		$fields->addFieldToTab('Root.Main', new CheckboxField('ShowCmsLink', _t('FrontendCreate.SHOW_CMS_LINK', 'Show CMS link for Page objects after creation')), 'Content');
 		$fields->addFieldToTab('Root.Main', new CheckboxField('AllowEditing', _t('FrontendCreate.ALLOW_EDITING', 'Allow frontend editing of this page after creation')), 'Content');

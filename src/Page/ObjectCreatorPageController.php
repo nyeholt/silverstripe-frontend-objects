@@ -183,7 +183,39 @@ class ObjectCreatorPageController extends PageController {
 
 	public function Form() {
 		return $this->CreateForm();
-	}
+    }
+
+    /**
+     * Create the placeholder object used for a) the CreateForm and b) for saving
+     * into when we're creating a _new_ object
+     */
+    public function createEditObject() {
+        $class = $this->CreateType;
+
+        // see if we've been passed a create type in the request
+        if ($customType = $this->getRequest()->postVar('CustomCreateType')) {
+            $allowed = $this->allowedCreationTypes();
+            if (isset($allowed[$customType])) {
+                $class = $customType;
+            }
+        }
+        return $class::create();
+    }
+
+    protected function allowedCreationTypes() {
+        $labelledTypes = [];
+        if ($this->data()->CreateTypeOptions && $values = $this->data()->CreateTypeOptions->getValues()) {
+            $labels = $this->data()->allAvailableTypes();
+
+            foreach ($values as $type) {
+                if (!isset($labels[$type])) {
+                    continue;
+                }
+                $labelledTypes[$type] = $labels[$type];
+            }
+        }
+        return $labelledTypes;
+    }
 
 	public function CreateForm($request = null) {
 		// NOTE(Jake): This is required here so that any HasMany/ManyManyList in the fields uses
@@ -200,9 +232,7 @@ class ObjectCreatorPageController extends PageController {
 		if ($this->CreateType)
 		{
 			if (!$this->editObject) {
-				$class = $this->CreateType;
-				$this->editObject = $class::create();
-				unset($class);
+                $this->editObject = $this->createEditObject();
 			}
 			if ($this->editObject instanceof FrontendCreatable || $this->editObject->hasMethod('getFrontendCreateFields')) {
 				$tFields = $this->editObject->getFrontendCreateFields();
@@ -234,7 +264,12 @@ class ObjectCreatorPageController extends PageController {
 				$parentType = isset($parentMap[$this->CreateType]) ? $parentMap[$this->CreateType] : $this->CreateType;
 				$fields->push($tree = DropdownField::create('CreateLocationID', _t('FrontendCreate.SELECT_LOCATION', 'Location')));
 				$tree->setSource($this->data()->RestrictCreationToItems()->map()->toArray());
-			}
+            }
+
+            $customTypes = $this->allowedCreationTypes();
+            if (count($customTypes)) {
+                $fields->push(DropdownField::create('CustomCreateType', 'Type to create', $customTypes, $this->CreateType));
+            }
 
 			if ($this->data()->useObjectExistsHandling() && $this->data()->AllowUserWhenObjectExists) {
 				$fields->push(new DropdownField(

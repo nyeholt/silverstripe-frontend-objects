@@ -318,21 +318,6 @@ class ObjectCreatorPageController extends PageController {
 	}
 
 	/**
-	 * Callback to handle filtering of the selection tree that users can create in.
-	 *
-	 * Uses extensions to allow for overrides.
-	 *
-	 * @param DataObject $node
-	 */
-	public function createLocationFilter($node) {
-		$allow = $this->extend('filterCreateLocations', $node);
-		if (count($allow) == 0) {
-			return true;
-		}
-		return min($allow) > 0;
-	}
-
-	/**
 	 * Return the new object if set in the URL
 	 * @return DataObject
 	 */

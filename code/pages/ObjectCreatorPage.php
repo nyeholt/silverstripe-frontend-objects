@@ -507,7 +507,7 @@ class ObjectCreatorPage_Controller extends Page_Controller {
 		{
 			if (!$this->editObject) {
 				$class = $this->CreateType;
-				$this->editObject = $class::create();
+				$this->editObject = $class::create(null, false);
 				unset($class);
 			}
 			if ($this->editObject instanceof FrontendCreatable || $this->editObject->hasMethod('getFrontendCreateFields')) {

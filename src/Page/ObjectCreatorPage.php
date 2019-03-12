@@ -40,7 +40,6 @@ use SilverStripe\i18n\i18n;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\HiddenField;
 use SilverStripe\Core\Config\Config;
-use Symbiote\FrontendObjects\Page\ObjectCreatorPage;
 use SilverStripe\Forms\FormAction;
 use SilverStripe\Forms\Form;
 use Symbiote\FrontendObjects\Control\ObjectCreatorPage_FrontEndWorkflowController;
@@ -195,9 +194,14 @@ class ObjectCreatorPage extends Page {
 			}
 			if (Extensible::has_extension($this->CreateType, WorkflowApplicable::class)) {
 				$workflows = WorkflowDefinition::get()->map()->toArray();
-				$fields->addFieldToTab('Root.Main', DropdownField::create('WorkflowDefinitionID', 'Workflow Definition', $workflows)->setHasEmptyDefault(true), 'Content');
-				$fields->addFieldToTab('Root.Main', CheckboxField::create('ReviewWithPageTemplate', 'Make Workflow review page render with page template?')
-						->setDescription('Renders the page with its controller and shows how it would appear when published. $Form or $CreateForm must exist in the template for the review fields and save buttons.'), 'Content');
+                $fields->addFieldToTab(
+                    'Root.Main',
+                    DropdownField::create('WorkflowDefinitionID', 'Workflow Definition', $workflows)
+                        ->setHasEmptyDefault(true)->setRightTitle("Do not use if page is created in a location with workflow"),
+                    'Content'
+                );
+				// $fields->addFieldToTab('Root.Main', CheckboxField::create('ReviewWithPageTemplate', 'Make Workflow review page render with page template?')
+				// 		->setDescription('Renders the page with its controller and shows how it would appear when published. $Form or $CreateForm must exist in the template for the review fields and save buttons.'), 'Content');
 			}
 		} else {
 			$fields->addFieldToTab('Root.Main', new LiteralField('SaveNotice', _t('FrontendCreate.SAVE_NOTICE', '<p>Select a type to create and save the page for additional options</p>')), 'Content');

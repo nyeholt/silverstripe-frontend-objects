@@ -23,6 +23,7 @@ use SilverStripe\Security\Member;
 use SilverStripe\Control\Controller;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\ORM\FieldType\DBField;
+use Symbiote\AdvancedWorkflow\DataObjects\WorkflowDefinition;
 
 
 class ObjectCreatorPageController extends PageController
@@ -352,6 +353,15 @@ class ObjectCreatorPageController extends PageController
     {
         if ($object = $this->NewObject()) {
             $message = $this->Data()->SuccessMessage;
+
+            $keywords = new \ArrayObject();
+            $keywords['$Title'] = $object->Title;
+            $keywords['$Link'] = $object->Link();
+
+            $this->extend('updateObjectCreatorKeywords', $keywords);
+
+            $message = str_replace(array_keys($keywords->getArrayCopy()), array_values($keywords->getArrayCopy()), $message);
+
             $message = str_replace('$Title', $object->Title, $message);
             $message = str_replace('$Link', $object->Link(), $message);
             return $message;

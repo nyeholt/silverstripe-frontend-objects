@@ -1,5 +1,16 @@
 <?php
 
+namespace Symbiote\FrontendObjects\Extension;
+
+use SilverStripe\Forms\RequiredFields;
+use SilverStripe\Forms\FieldList;
+use SilverStripe\ORM\ArrayLib;
+use SilverStripe\Forms\GridField\GridField;
+use SilverStripe\ORM\DataExtension;
+use Symbiote\MultiRecord\MultiRecordEditingField;
+
+
+
 class ElementalFrontendCreateValidator extends RequiredFields {
 	public function php($data) {
 		$result = parent::php($data);
@@ -38,7 +49,7 @@ class ElementalFrontendCreateExtension extends DataExtension {
 				if ($field instanceof GridField) {
 					$field = $field->transform(new MultiRecordTransformation);
 				}
-				if ($field instanceof MultiRecordField) {
+				if ($field instanceof MultiRecordEditingField) {
 					$field->setFieldsFunction(__FUNCTION__, true);
 				}
 				$fields->push($field);

@@ -1,0 +1,15 @@
+mappings:
+  ElementalFrontendCreateValidator: Symbiote\FrontendObjects\Extension\ElementalFrontendCreateValidator
+  ElementalFrontendCreateExtension: Symbiote\FrontendObjects\Extension\ElementalFrontendCreateExtension
+  SubmittedFormForListExtension: Symbiote\FrontendObjects\Extension\SubmittedFormForListExtension
+  FrontendFileCreatable: Symbiote\FrontendObjects\Extension\FrontendFileCreatable
+  FrontendCreateableExtension: Symbiote\FrontendObjects\Extension\FrontendCreateableExtension
+  ItemListPage: Symbiote\FrontendObjects\Page\ItemListPage
+  ItemListPage_Controller: Symbiote\FrontendObjects\Page\ItemListPageController
+  ObjectCreatorPage: Symbiote\FrontendObjects\Page\ObjectCreatorPage
+  ObjectCreatorPage_Controller: Symbiote\FrontendObjects\Page\ObjectCreatorPageController
+  FrontendCreateableObject: Symbiote\FrontendObjects\Page\FrontendCreateableObject
+  FrontendModelController: Symbiote\FrontendObjects\Control\FrontendModelController
+  FrontendAdmin: Symbiote\FrontendObjects\Control\FrontendAdmin
+  ObjectCreatorPage_FrontEndWorkflowController: Symbiote\FrontendObjects\Control\ObjectCreatorPage_FrontEndWorkflowController
+  ItemList: Symbiote\FrontendObjects\Model\ItemList

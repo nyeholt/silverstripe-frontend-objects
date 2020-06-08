@@ -1,4 +1,12 @@
 <?php
+namespace Symbiote\FrontendObjects\Test;
+
+use Page;
+
+use SilverStripe\Dev\FunctionalTest;
+use SilverStripe\Core\Config\Config;
+use Symbiote\AdvancedWorkflow\DataObjects\WorkflowDefinition;
+use Symbiote\FrontendObjects\Page\ObjectCreatorPage;
 
 class FrontendObjectTest extends FunctionalTest
 {
@@ -30,14 +38,14 @@ class FrontendObjectTest extends FunctionalTest
 
         $workflowDef = $this->importWorkflowDefinition('testPageAuthorAndApprover.yml');
 
-        // 
+        //
         $page = $this->createWorkflowObjectCreatorPage();
         $page->WorkflowDefinitionID = $workflowDef->ID;
 
         $page->CanViewType = 'OnlyTheseUsers';
         $page->ViewerGroups()->add($this->objFromFixture('Group', 'creator'));
         $page->ViewerGroups()->add($this->objFromFixture('Group', 'approver'));
-        
+
         $page->write();
         $page->publish('Stage', 'Live');
 
@@ -69,7 +77,7 @@ class FrontendObjectTest extends FunctionalTest
         $this->get($EDIT_PAGE_URL);
         $this->assertEquals(0, count($this->cssParser()->getBySelector('#Form_CreateForm')));
 
-        // 
+        //
         $this->logInAs('approver');
 
         // Open review page and click 'edit' button
@@ -112,7 +120,7 @@ class FrontendObjectTest extends FunctionalTest
         $this->assertEquals(0, count($this->cssParser()->getBySelector('#FrontendWorkflowForm_Form2')));
         // TODO(Jake): Add default "review item listing" functionality and check for it.
 
-        // Once workflow is finished and page is published, the approver should not be able 
+        // Once workflow is finished and page is published, the approver should not be able
         // edit or review. (ie. form should not exist)
         $this->get($EDIT_PAGE_URL);
         $this->assertEquals(0, count($this->cssParser()->getBySelector('#Form_CreateForm')));
@@ -134,12 +142,12 @@ class FrontendObjectTest extends FunctionalTest
 
     /**
      * Roles:
-     *     - Media creator who creates an object, which enters a 'Preview' state which they 
-     *       then edit further or review/preview. 
-     *       Then submit to be reviewed by "Media Reviewer" (review-only) or 
+     *     - Media creator who creates an object, which enters a 'Preview' state which they
+     *       then edit further or review/preview.
+     *       Then submit to be reviewed by "Media Reviewer" (review-only) or
      *       "Media Approver" ("review-edit and approve")
      *
-     *     - Media reviewer who can review/edit 'media creator' objects and submit for further 
+     *     - Media reviewer who can review/edit 'media creator' objects and submit for further
      *       approval from "media approver"
      *
      *     - Media Approver, who can review/edit/publish, this is the final stage.
@@ -150,7 +158,7 @@ class FrontendObjectTest extends FunctionalTest
         }
         $workflowDef = $this->importWorkflowDefinition('testMediaCreatorReviewerApprover.yml');
 
-        // 
+        //
         $page = $this->createWorkflowObjectCreatorPage();
         $page->WorkflowDefinitionID = $workflowDef->ID;
 
@@ -294,7 +302,7 @@ class FrontendObjectTest extends FunctionalTest
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    /** 
+    /**
      * Get the <input name> attribute from the 'value'.
      *
      * @return string
@@ -318,7 +326,7 @@ class FrontendObjectTest extends FunctionalTest
      */
     private function importWorkflowDefinition($name) {
         $workflowImporter = singleton('WorkflowDefinitionImporter');
-        // NOTE: Requires Advaned Workflow 3.8+ 
+        // NOTE: Requires Advaned Workflow 3.8+
         $this->assertTrue(method_exists($workflowImporter, 'importWorkflowDefinitionFromYAML'));
         // Import Workflow
         $workflowDef = $workflowImporter->importWorkflowDefinitionFromYAML(dirname(__FILE__).'/'.$name);

@@ -6,8 +6,8 @@ TBC
 
 ## Requirements
 
-* Restricted objects module https://github.com/nyeholt/silverstripe-restrictedobjects
-
+Note that this is not yet fully updated to SilverStripe 4 compatibility; core functionality is available,
+but additional things like the item table capability is not.
 
 ## Configuration settings
 
